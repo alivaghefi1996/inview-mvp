@@ -9,6 +9,13 @@ import About from './pages/visitor/About'
 import Profile from './pages/visitor/Profile'
 import GalleryLayout from './pages/gallery/GalleryLayout'
 import { ArtworkInterest, Audience, Overview } from './pages/gallery/Dashboard'
+import Import from './pages/gallery/Import'
+import Plans from './pages/gallery/Plans'
+import Website from './pages/site/Website'
+
+// On roozgallery.inview.ir the home page is the gallery's website.
+const host = typeof window !== 'undefined' ? window.location.hostname : ''
+const isGallerySite = host.endsWith('.inview.ir') && host.split('.')[0] === gallery.subdomain
 
 function NotFound() {
   return (
@@ -23,7 +30,8 @@ function NotFound() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to={`/g/${gallery.slug}`} replace />} />
+      <Route path="/" element={isGallerySite ? <Website /> : <Navigate to={`/g/${gallery.slug}`} replace />} />
+      <Route path="/site/:slug" element={<Website />} />
       <Route element={<VisitorShell />}>
         <Route path="/g/:slug" element={<Welcome />} />
         <Route path="/g/:slug/works" element={<Works />} />
@@ -37,6 +45,8 @@ export default function App() {
         <Route index element={<Overview />} />
         <Route path="artworks" element={<ArtworkInterest />} />
         <Route path="audience" element={<Audience />} />
+        <Route path="website" element={<Import />} />
+        <Route path="plans" element={<Plans />} />
       </Route>
     </Routes>
   )

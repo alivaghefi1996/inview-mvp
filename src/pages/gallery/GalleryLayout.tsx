@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { gallery, report, show } from '../../data/gallery'
 
 const KEY = 'inview-dashboard-unlocked'
@@ -10,6 +10,8 @@ export default function GalleryLayout() {
   })
   const [pw, setPw] = useState('')
   const [error, setError] = useState('')
+  const { pathname } = useLocation()
+  const page = pathname.endsWith('/website') ? 'Website and import' : pathname.endsWith('/plans') ? 'Plans' : null
 
   useEffect(() => {
     document.documentElement.lang = 'en'
@@ -46,16 +48,24 @@ export default function GalleryLayout() {
           <NavLink to="/dashboard" end>Show report</NavLink>
           <NavLink to="/dashboard/artworks">Artworks</NavLink>
           <NavLink to="/dashboard/audience">Audience and leads</NavLink>
+          <NavLink to="/dashboard/website">Website and import</NavLink>
+          <NavLink to="/dashboard/plans">Plans</NavLink>
         </nav>
         <p className="muted tiny side-note">Demo with illustrative numbers.</p>
       </aside>
       <main className="dash-main">
         <header className="dash-head">
-          <div>
-            <p className="muted small">{show.kind}, {show.dates}. Day {report.dayOf} of {report.days}</p>
-            <h1>{show.title}</h1>
-          </div>
-          <span className="pill good">{report.vsLastShow} scans vs your last show</span>
+          {page ? (
+            <div><p className="muted small">{gallery.name}</p><h1>{page}</h1></div>
+          ) : (
+            <>
+              <div>
+                <p className="muted small">{show.kind}, {show.dates}. Day {report.dayOf} of {report.days}</p>
+                <h1>{show.title}</h1>
+              </div>
+              <span className="pill good">{report.vsLastShow} scans vs your last show</span>
+            </>
+          )}
         </header>
         <Outlet />
       </main>

@@ -36,6 +36,8 @@ export const gallery = {
   instagram: 'roozgallery',
   phone: '+98 21 0000 0000',
   dashboardPassword: 'inview',
+  // Public website address: roozgallery.inview.ir (or /site/rooz-gallery on any host)
+  subdomain: 'roozgallery',
 }
 
 export const show = {
@@ -136,3 +138,42 @@ export const report = {
 // Other galleries in the visitor's passport (demo history)
 export const passportHistory = ['H', 'S', '0', 'B', 'V', 'O', 'A', 'K', 'N']
 export const passportGoal = 20
+
+// ---- Gallery website: past exhibitions (archived automatically from QR pages) ----
+export const pastShows = [
+  { title: 'Works on Paper', kind: 'Group exhibition', date: 'Sep 2026', image: '/artworks/darijani.jpg' },
+  { title: 'Figure and Field', kind: 'Group exhibition', date: 'Jul 2026', image: '/artworks/fateh.jpg' },
+  { title: 'Small Formats', kind: 'Group exhibition', date: 'May 2026', image: '/artworks/alaeinezhad.jpg' },
+  { title: 'Annual Show 1404', kind: 'Group exhibition', date: 'Mar 2026', image: '/artworks/bakhtiari.jpg' },
+]
+
+// ---- Website and import: what the (simulated) AI finds in uploaded files ----
+export const importDemo = {
+  found: { artworks: 31, artists: 7, shows: 4 },
+  files: [
+    { name: 'price-list-1404.xlsx', result: '22 works' },
+    { name: '12 photos of wall labels', result: '9 works' },
+    { name: 'instagram-captions.txt', result: '4 shows' },
+    { name: 'old-website-export.zip', result: '7 artist bios' },
+  ],
+  rows: [
+    { id: 'r1', artworkId: 'mardali-tree', source: 'Excel', note: 'Duplicate merged', ok: true },
+    { id: 'r2', artworkId: 'fateh-face', source: 'Wall-label photo', note: 'English name added', ok: true },
+    { id: 'r3', artworkId: 'bakhtiari-abstract', source: 'Wall-label photo', note: 'Size read from photo', ok: true },
+    { id: 'r4', artworkId: 'darijani-clown', source: 'Instagram', note: 'Price unclear: check', ok: false },
+    { id: 'r5', artworkId: 'emami-subjectivity', source: 'Excel', note: 'Title added: Subjectivity', ok: true },
+    { id: 'r6', artworkId: 'alaeinezhad-riders', source: 'Old website', note: 'No price found: add', ok: false },
+  ],
+}
+
+// ---- Plans (Toman, excluding VAT; annual = 10 months) ----
+export const plans = [
+  { name: 'Show', tag: 'Start here', monthly: 'Free', annual: 'Free', address: 'inview.ir/name',
+    features: ['A QR page for every show', 'Works and price list', 'Scan count'] },
+  { name: 'Website', tag: 'Replaces WordPress', monthly: '2,500,000', annual: '25,000,000', address: 'name.inview.ir',
+    features: ['Website from editable templates', 'AI import and cleanup', 'Archive builds itself', 'Visitor funnel per show', 'Hosting and support included'] },
+  { name: 'Growth', tag: 'Most galleries', monthly: '6,000,000', annual: '60,000,000', address: 'name.inview.ir + own domain', highlight: true,
+    features: ['Everything in Website', 'Own domain', 'Ranked leads and audience', 'SMS and newsletters', 'We upload 2 shows a month'] },
+  { name: 'Pro', tag: 'Large galleries', monthly: 'from 12,000,000', annual: 'from 120,000,000', address: 'Own domain',
+    features: ['Custom design, several spaces', 'Collector management', 'Loyalty and sales tools', 'Unlimited show uploads', 'Dedicated manager'] },
+]

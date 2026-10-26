@@ -15,6 +15,9 @@ passport stamps are stored only in each visitor's own browser.
 | `/g/rooz-gallery/about` | Artists, exhibition text, visit info |
 | `/me` | Visitor profile and gallery passport |
 | `/dashboard` | Gallery dashboard (demo password: `inview`) |
+| `/dashboard/website` | Website and import: drop files, AI organizes them (simulated), approve, publish |
+| `/dashboard/plans` | Plans and prices in Toman, compared with building a WordPress site |
+| `/site/rooz-gallery` | The gallery’s public website (also served at `roozgallery.inview.ir`) |
 
 The visitor side works in English and Persian (toggle at the top right).
 In the demo, any 4-digit SMS code is accepted.
@@ -86,7 +89,25 @@ host is slow or blocked, use an Iranian host.
 Create a QR code that opens `https://app.yourdomain.com/g/rooz-gallery`,
 print it and put it at the gallery entrance.
 
-## 7. Test before the demo
+## 7. Gallery websites on subdomains (roozgallery.inview.ir)
+
+The app shows the gallery website at the home page when it is opened on
+`<subdomain>.inview.ir`, where `<subdomain>` is `gallery.subdomain` in
+`src/data/gallery.ts` (currently `roozgallery`). Until the domain is set up,
+use `/site/rooz-gallery` on any address.
+
+To set it up on Vercel:
+1. Buy `inview.ir` (through an Iranian registrar; `.ir` needs an Iranian registrant).
+2. In Vercel → project → Settings → Domains, add `inview.ir` and `*.inview.ir`.
+3. Wildcard domains need Vercel’s nameservers: at the registrar, change the
+   domain’s nameservers to the ones Vercel shows. HTTPS is then issued for
+   every subdomain automatically.
+4. Open `https://roozgallery.inview.ir`.
+
+On Iranian hosts (Liara, ArvanCloud), add a wildcard DNS record `*.inview.ir`
+pointing to the app and enable a wildcard SSL certificate.
+
+## 8. Test before the demo
 
 - iPhone: open in Safari → Share → Add to Home Screen.
 - Android: open in Chrome → Install app.
@@ -97,5 +118,6 @@ print it and put it at the gallery entrance.
 
 - Prices and dashboard numbers are illustrative. Get the artists' permission
   before showing their works publicly.
+- The AI import is simulated with sample results; nothing is uploaded. The real version will send files to an AI model and keep the approve-before-publish step.
 - This demo stores nothing on a server. Collecting real phone numbers needs a
   backend, an SMS provider and a privacy policy (next stage).

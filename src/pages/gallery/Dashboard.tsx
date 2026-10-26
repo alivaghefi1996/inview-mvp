@@ -1,4 +1,5 @@
 import { artworks, report } from '../../data/gallery'
+import { Link } from 'react-router-dom'
 import { Lock } from '../../components/Icons'
 
 const fmt = (v: number) => v.toLocaleString('en-US')
@@ -139,7 +140,7 @@ export function Audience() {
                 <td><button className="btn btn-outline small-btn">{l.contact}</button></td>
               </tr>
             ))}
-            <tr className="locked"><td colSpan={4}><span className="row gap"><Lock />{report.lockedLeads} more leads ranked. The full list comes with the Growth plan.</span></td><td><button className="btn btn-primary small-btn">See plans</button></td></tr>
+            <tr className="locked"><td colSpan={4}><span className="row gap"><Lock />{report.lockedLeads} more leads ranked. The full list comes with the Growth plan.</span></td><td><Link className="btn btn-primary small-btn" to="/dashboard/plans">See plans</Link></td></tr>
           </tbody>
         </table>
       </section>
