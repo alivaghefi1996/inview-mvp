@@ -4,6 +4,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 process.env.NODE_ENV = 'test'
+process.env.PUBLIC_RECORD_TTL_MS = '5000'
 delete process.env.O_GALLERY_ACCESS_CODE
 import { eq } from 'drizzle-orm'
 import * as schema from '../database/schema.ts'
