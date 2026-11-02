@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 
 process.env.NODE_ENV = 'test'
 delete process.env.O_GALLERY_ACCESS_CODE
+// The origin check compares the Origin header against this value, which CI also sets.
+process.env.PUBLIC_APP_URL = 'http://localhost'
 
 import { eq, like } from 'drizzle-orm'
 import request from 'supertest'
@@ -150,8 +152,8 @@ test('the public API reads a gallery by its slug and answers 404 for an unknown 
     const sample = await request(app).get('/api/v1/pilot?gallery=sample')
     assert.equal(sample.status, 200)
     assert.equal(sample.body.record.slug, 'sample')
-    const fallback = await request(app).get('/api/v1/pilot')
-    assert.equal(fallback.body.record.slug, 'o-gallery')
+    const pilot = await request(app).get('/api/v1/pilot?gallery=o-gallery')
+    assert.equal(pilot.body.record.slug, 'o-gallery')
     const unknown = await request(app).get('/api/v1/pilot?gallery=nope')
     assert.equal(unknown.status, 404)
     const unknownPost = await request(app)
@@ -202,7 +204,7 @@ test('a sample work id does not count against O Gallery and an O lead cannot nam
     const o = await ensureOGalleryTenant(db)
     const view = await request(app)
       .post('/api/v1/pilot')
-      .send({ op: 'visit', kind: 'view', visitorId: VISITOR, workId: SAMPLE_WORK })
+      .send({ op: 'visit', gallery: 'o-gallery', kind: 'view', visitorId: VISITOR, workId: SAMPLE_WORK })
     assert.equal(view.status, 200)
     const [row] = await db.select().from(visits)
     assert.equal(row.showId, o.show.id)
@@ -210,8 +212,36 @@ test('a sample work id does not count against O Gallery and an O lead cannot nam
 
     const lead = await request(app)
       .post('/api/v1/pilot')
-      .send(leadBody({ phone: '09121234567', kind: 'save', workId: SAMPLE_WORK, visitorId: VISITOR }))
+      .send({ ...leadBody({ phone: '09121234567', kind: 'save', workId: SAMPLE_WORK, visitorId: VISITOR }), gallery: 'o-gallery' })
     assert.equal(lead.status, 400)
     assert.equal((await db.select().from(leads)).length, 0)
+  })
+})
+
+test('HAD-110 a request without a gallery is refused and changes no gallery', async () => {
+  await withGalleries(async ({ db, app }) => {
+    await ensureOGalleryTenant(db)
+    for (const path of ['/api/v1/pilot', '/api/pilot']) {
+      const read = await request(app).get(path)
+      assert.equal(read.status, 400, path)
+      assert.equal(read.body.error, 'Name the gallery.')
+      const scan = await request(app)
+        .post(path)
+        .send({ op: 'visit', kind: 'scan', visitorId: VISITOR })
+      assert.equal(scan.status, 400, path)
+      const lead = await request(app)
+        .post(path)
+        .send(leadBody({ phone: '09121234567', kind: 'ask', workId: SAMPLE_WORK, visitorId: VISITOR }))
+      assert.equal(lead.status, 400, path)
+      const publish = await request(app)
+        .put(path)
+        .set('Host', 'localhost').set('Origin', 'http://localhost')
+        .send({ accessCode: 'inview', record: { name: 'Taken over' } })
+      assert.equal(publish.status, 400, path)
+    }
+    assert.equal((await db.select().from(visits)).length, 0)
+    assert.equal((await db.select().from(leads)).length, 0)
+    const record = await request(app).get('/api/v1/pilot?gallery=o-gallery')
+    assert.equal(record.body.record.name, 'O Gallery')
   })
 })

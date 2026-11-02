@@ -1,11 +1,10 @@
-import { O_SLUG } from './galleries'
+import { DEMO_SLUG, gallerySurfaceSlug } from './galleries'
 export type Lang = 'en' | 'fa'
 export type Dir = 'rtl' | 'ltr'
 
 export const LANG_COOKIE = 'inview-lang'
 const ONE_YEAR = 60 * 60 * 24 * 365
 
-const PERSIAN_FIRST = [`/g/${O_SLUG}`, `/site/${O_SLUG}`, '/ops', '/staff']
 const BILINGUAL_STAFF = ['/ops', '/staff']
 
 function underPath(pathname: string, base: string): boolean {
@@ -16,8 +15,11 @@ export function isStaffPath(pathname: string): boolean {
   return underPath(pathname, '/dashboard') || underPath(pathname, '/staff')
 }
 
+/** ADR 0002: a gallery opens in Persian, and the Rooz demo opens in English for sales. */
 export function defaultLang(pathname: string): Lang {
-  return pathname === '/' || PERSIAN_FIRST.some((base) => underPath(pathname, base)) ? 'fa' : 'en'
+  if (pathname === '/' || isBilingualStaffPath(pathname)) return 'fa'
+  const slug = gallerySurfaceSlug(pathname)
+  return slug && slug !== DEMO_SLUG ? 'fa' : 'en'
 }
 
 export function readLangCookie(header: string | null | undefined): Lang | null {

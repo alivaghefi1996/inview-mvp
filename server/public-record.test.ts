@@ -53,6 +53,7 @@ test('Persian work fields and show dates round-trip through publish', async () =
     const { db, storage } = testDb
     const first = (await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!)).record
     const published = await handlePilotApi(db, storage, 'PUT', {
+      gallery: 'o-gallery',
       accessCode: 'inview',
       record: {
         ...first,
@@ -79,7 +80,7 @@ test('the public record cache serves repeats and drops a stale copy after the TT
   try {
     const { db, storage } = testDb
     const first = (await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!)).record
-    await handlePilotApi(db, storage, 'PUT', { accessCode: 'inview', record: { ...first, showTitle: 'One', works: [work('cachework1')] } })
+    await handlePilotApi(db, storage, 'PUT', { gallery: 'o-gallery', accessCode: 'inview', record: { ...first, showTitle: 'One', works: [work('cachework1')] } })
     const base = Date.now()
     const a = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!, base)
     const b = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!, base)
@@ -93,7 +94,7 @@ test('the public record cache serves repeats and drops a stale copy after the TT
     assert.notEqual(c, b)
     assert.equal(c.record.showTitle, 'Two')
 
-    await handlePilotApi(db, storage, 'PUT', { accessCode: 'inview', record: { ...c.record, showTitle: 'Three' } })
+    await handlePilotApi(db, storage, 'PUT', { gallery: 'o-gallery', accessCode: 'inview', record: { ...c.record, showTitle: 'Three' } })
     assert.equal((await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!)).record.showTitle, 'Three')
   } finally {
     await testDb.close()

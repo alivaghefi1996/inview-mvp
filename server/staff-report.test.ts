@@ -44,7 +44,7 @@ function work(id: string, title: string, patch: Record<string, unknown> = {}) {
 }
 
 async function publish(app: ReturnType<typeof createApiApp>, cookie: string, list: unknown[], patch: Record<string, unknown> = {}) {
-  const current = await request(app).get('/api/v1/pilot')
+  const current = await request(app).get('/api/v1/pilot?gallery=o-gallery')
   return request(app)
     .put('/api/v1/pilot')
     .set('Host', 'localhost').set('Origin', 'http://localhost')
@@ -154,7 +154,7 @@ test('HAD-31 removing a work keeps its lead history', async () => {
     const report = await request(app).get('/api/v1/pilot/staff?gallery=o-gallery').set('Cookie', cookie)
     assert.equal(report.body.leads[0].workTitle, 'Removed work')
     const newLead = await request(app).post('/api/v1/pilot').send({
-      op: 'lead', kind: 'ask', phone: '09120000006', visitorId: 'visitor-003', workId: 'gonework01', consent: true, consentTextVersion: CONSENT_TEXT_VERSION,
+      gallery: 'o-gallery', op: 'lead', kind: 'ask', phone: '09120000006', visitorId: 'visitor-003', workId: 'gonework01', consent: true, consentTextVersion: CONSENT_TEXT_VERSION,
     })
     assert.equal(newLead.status, 400)
     const back = await publish(app, cookie, [work('keepwork01', 'Kept work'), work('gonework01', 'Removed work')])

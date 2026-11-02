@@ -98,6 +98,27 @@ test.describe('sample gallery', () => {
     await expect(page.locator('meta[name="robots"]')).toHaveCount(0)
   })
 
+  test('the sample gallery starts in Persian and links its own manifest', async ({ page, request }) => {
+    expect(await (await request.get('/g/sample')).text()).toMatch(/<html[^>]*lang="fa"[^>]*dir="rtl"/)
+    expect(await (await request.get('/site/sample')).text()).toMatch(/<html[^>]*lang="fa"[^>]*dir="rtl"/)
+
+    await page.goto('/g/sample')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'fa')
+    await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/g/sample/manifest.webmanifest')
+  })
+
+  test('a visit without a gallery is refused and leaves the counts alone', async ({ request }) => {
+    const before = await sampleVisitCounts()
+    const response = await request.post('/api/v1/pilot', {
+      data: { op: 'visit', kind: 'scan', visitorId: 'visitor-no-gallery' },
+    })
+    expect(response.status()).toBe(400)
+    expect((await response.json()).error).toBe('Name the gallery.')
+    const after = await sampleVisitCounts()
+    expect(after.o).toBe(before.o)
+    expect(after.sample).toBe(before.sample)
+  })
+
   test('an unknown gallery slug answers 404', async ({ request }) => {
     const response = await request.get('/g/nope')
     expect(response.status()).toBe(404)

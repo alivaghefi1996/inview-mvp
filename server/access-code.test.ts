@@ -82,8 +82,9 @@ function assertNoSecret(lines: string[], secrets: string[]) {
 }
 
 async function publish(db: Awaited<ReturnType<typeof setup>>['db'], storage: LocalObjectStorage, accessCode: string) {
-  const first = await handlePilotApi(db, storage, 'GET', null)
+  const first = await handlePilotApi(db, storage, 'GET', { gallery: 'o-gallery' })
   return handlePilotApi(db, storage, 'PUT', {
+    gallery: 'o-gallery',
     accessCode,
     record: {
       ...(first.body as { record: object }).record,

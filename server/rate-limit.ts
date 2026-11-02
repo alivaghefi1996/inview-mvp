@@ -10,16 +10,14 @@ import {
   GALLERY_NOT_FOUND,
   isPublicTenant,
   publishGalleryRecordForSession,
-  readStaffReportForSession,
 } from './gallery-record'
-import { gallerySlugOf, handlePilotApi, handleStaffApi } from './pilot-api'
+import { gallerySlugOf, handlePilotApi, MISSING_GALLERY } from './pilot-api'
 import { signInWithAccessCode } from './staff-session'
 import type { ObjectStorage } from './storage'
 import type { Principal } from './authz'
 
 type Db = AppDatabase
 
-import { O_SLUG } from '../app/lib/galleries'
 const IP_TEXT = /^[0-9A-Fa-f:.]+$/
 
 const LIMIT_DEFAULTS = {
@@ -328,6 +326,7 @@ export async function runPilotRequest(
     const result = await publishGalleryRecordForSession(db, storage, sessionGalleryId, payload.record)
     return { status: result.status, body: result.body }
   }
+  if (!gallerySlug) return MISSING_GALLERY
   if (verb === 'PUT') {
     const blocked = await beforeAccessCheck(db, ip, now, config, gallerySlug)
     if (blocked) return blocked
@@ -342,24 +341,6 @@ export async function runPilotRequest(
     const blocked = await afterAccessCheck(db, ip, result.status, now, config, gallerySlug)
     if (blocked) return blocked
   }
-  return { status: result.status, body: result.body }
-}
-
-export async function runStaffRequest(
-  db: Db,
-  accessCode: string,
-  ip: string,
-  now = new Date(),
-  config = rateLimitConfig(),
-  sessionGalleryId: string | null = null,
-): Promise<ApiResult> {
-  const gallerySlug = O_SLUG
-  if (sessionGalleryId) return readStaffReportForSession(db, sessionGalleryId)
-  const blocked = await beforeAccessCheck(db, ip, now, config, gallerySlug)
-  if (blocked) return blocked
-  const result = await handleStaffApi(db, accessCode, gallerySlug)
-  const failure = await afterAccessCheck(db, ip, result.status, now, config, gallerySlug)
-  if (failure) return failure
   return { status: result.status, body: result.body }
 }
 
@@ -412,7 +393,7 @@ export async function runSignIn(
   ip: string,
   now = new Date(),
   config = rateLimitConfig(),
-  gallerySlug = O_SLUG,
+  gallerySlug: string,
 ): Promise<{ ok: true; token: string } | { ok: false; result: ApiResult }> {
   const blocked = await beforeAccessCheck(db, ip, now, config, gallerySlug)
   if (blocked) return { ok: false, result: blocked }

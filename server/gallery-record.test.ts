@@ -46,19 +46,21 @@ test('O Gallery publish, scan dedupe, view and lead use the multi-tenant tables'
   const { client, db, storage, mediaRoot } = await setup()
   try {
     const phone = '09120000000'
-    const first = await handlePilotApi(db, storage, 'GET', null)
+    const first = await handlePilotApi(db, storage, 'GET', { gallery: 'o-gallery' })
     assert.equal(first.status, 200)
     assert.equal((first.body as { record: { slug: string } }).record.slug, 'o-gallery')
     assert.equal((first.body as { record: { works: unknown[] } }).record.works.length, 0)
     assertNoVisitorData(first.body, phone)
 
     const denied = await handlePilotApi(db, storage, 'PUT', {
+      gallery: 'o-gallery',
       password: 'nope',
       record: (first.body as { record: unknown }).record,
     })
     assert.equal(denied.status, 401)
 
     const badSample = await handlePilotApi(db, storage, 'PUT', {
+      gallery: 'o-gallery',
       accessCode: 'inview',
       record: {
         ...(first.body as { record: object }).record,
@@ -81,6 +83,7 @@ test('O Gallery publish, scan dedupe, view and lead use the multi-tenant tables'
     assert.equal(badSample.status, 400)
 
     const published = await handlePilotApi(db, storage, 'PUT', {
+      gallery: 'o-gallery',
       accessCode: 'inview',
       record: {
         ...(first.body as { record: object }).record,
@@ -111,11 +114,13 @@ test('O Gallery publish, scan dedupe, view and lead use the multi-tenant tables'
 
     const browserA = 'browser-a1'
     const scan1 = await handlePilotApi(db, storage, 'POST', {
+      gallery: 'o-gallery',
       op: 'visit',
       kind: 'scan',
       visitorId: browserA,
     })
     const scan2 = await handlePilotApi(db, storage, 'POST', {
+      gallery: 'o-gallery',
       op: 'visit',
       kind: 'scan',
       visitorId: browserA,
@@ -128,11 +133,13 @@ test('O Gallery publish, scan dedupe, view and lead use the multi-tenant tables'
 
     const browserB = 'browser-b2'
     const scanB = await handlePilotApi(db, storage, 'POST', {
+      gallery: 'o-gallery',
       op: 'visit',
       kind: 'scan',
       visitorId: browserB,
     })
     const viewB = await handlePilotApi(db, storage, 'POST', {
+      gallery: 'o-gallery',
       op: 'visit',
       kind: 'view',
       visitorId: browserB,
@@ -142,17 +149,20 @@ test('O Gallery publish, scan dedupe, view and lead use the multi-tenant tables'
     assertNoVisitorData(scanB.body, phone)
     assertNoVisitorData(viewB.body, phone)
 
-    const lead = await handlePilotApi(db, storage, 'POST', leadBody({
-      phone: '09120000000',
-      kind: 'save',
-      visitorId: browserB,
-      workId: 'samplework1',
-    }))
+    const lead = await handlePilotApi(db, storage, 'POST', {
+      ...leadBody({
+        phone: '09120000000',
+        kind: 'save',
+        visitorId: browserB,
+        workId: 'samplework1',
+      }),
+      gallery: 'o-gallery',
+    })
     assert.equal(lead.status, 200)
     assert.equal((lead.body as { ok: boolean }).ok, true)
     assertNoVisitorData(lead.body, phone)
 
-    const publicAfterLead = await handlePilotApi(db, storage, 'GET', null)
+    const publicAfterLead = await handlePilotApi(db, storage, 'GET', { gallery: 'o-gallery' })
     assert.equal(publicAfterLead.status, 200)
     assert.equal('leads' in (publicAfterLead.body as object), false)
     assertNoVisitorData(publicAfterLead.body, phone)
@@ -186,6 +196,7 @@ test('the server returns 400 for a lead without consent', async () => {
   const { client, db, storage, mediaRoot } = await setup()
   try {
     const base = {
+      gallery: 'o-gallery',
       op: 'lead',
       kind: 'save',
       visitorId: 'browser-b2',
@@ -214,8 +225,9 @@ test('the server returns 400 for a lead without consent', async () => {
 test('a lead from the first sign-in stores the work id', async () => {
   const { client, db, storage, mediaRoot } = await setup()
   try {
-    const first = await handlePilotApi(db, storage, 'GET', null)
+    const first = await handlePilotApi(db, storage, 'GET', { gallery: 'o-gallery' })
     const published = await handlePilotApi(db, storage, 'PUT', {
+      gallery: 'o-gallery',
       accessCode: 'inview',
       record: {
         ...(first.body as { record: object }).record,
@@ -237,12 +249,15 @@ test('a lead from the first sign-in stores the work id', async () => {
     })
     assert.equal(published.status, 200)
 
-    const body = leadBody({
-      phone: '09121111111',
-      kind: 'save',
-      visitorId: 'browser-b2',
-      workId: 'samplework1',
-    })
+    const body = {
+      ...leadBody({
+        phone: '09121111111',
+        kind: 'save',
+        visitorId: 'browser-b2',
+        workId: 'samplework1',
+      }),
+      gallery: 'o-gallery',
+    }
     assert.equal(body.workId, 'samplework1')
     assert.equal(body.consent, true)
 

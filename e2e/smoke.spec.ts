@@ -35,6 +35,7 @@ test.describe('smoke', () => {
 
   for (const [legacy, destination] of [
     ['/dashboard/o-gallery', '/staff/o-gallery'],
+    ['/dashboard/sample', '/staff/sample'],
     ['/dashboard/sign-in', '/staff/sign-in'],
   ]) {
     test(`${legacy} redirects to ${destination} and preserves the query`, async ({ request }) => {

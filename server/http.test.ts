@@ -58,13 +58,13 @@ function http(app: ReturnType<typeof createApiApp>, client: string) {
       return request(app).get(path).query({ gallery: 'o-gallery' }).set('x-test-client', client)
     },
     post(path: string) {
-      return request(app).post(path).set('Host', 'localhost').set('Origin', 'http://localhost').set('x-test-client', client)
+      return request(app).post(path).query({ gallery: 'o-gallery' }).set('Host', 'localhost').set('Origin', 'http://localhost').set('x-test-client', client)
     },
     put(path: string) {
       return request(app).put(path).query({ gallery: 'o-gallery' }).set('Host', 'localhost').set('Origin', 'http://localhost').set('x-test-client', client)
     },
     patch(path: string) {
-      return request(app).patch(path).set('x-test-client', client)
+      return request(app).patch(path).query({ gallery: 'o-gallery' }).set('x-test-client', client)
     },
   }
 }

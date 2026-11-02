@@ -21,7 +21,7 @@ import {
   hashClientAddress,
   rateLimitConfig,
   runPilotRequest,
-  runStaffRequest,
+  runSignIn,
   writeApiResult,
   type RateLimitConfig,
 } from './rate-limit.ts'
@@ -32,6 +32,18 @@ const VISITOR = 'visitor-1'
 
 function config(overrides: Partial<RateLimitConfig> = {}): RateLimitConfig {
   return { ...rateLimitConfig({ NODE_ENV: 'test' }), ipSalt: 'test-salt', ...overrides }
+}
+
+/** The access-code limits guard the staff sign-in, which names its gallery. */
+async function signIn(
+  db: Awaited<ReturnType<typeof setup>>['db'],
+  accessCode: string,
+  ip: string,
+  now: Date,
+  limits: RateLimitConfig,
+) {
+  const attempt = await runSignIn(db, accessCode, ip, now, limits, 'o-gallery')
+  return attempt.ok ? { status: 200, body: {}, retryAfterSeconds: undefined } : attempt.result
 }
 
 async function setup() {
@@ -124,9 +136,9 @@ test('address hash changes each UTC day and invalid limits fall back', () => {
 test('failed access codes return 429 and the window opens again', async () => {
   await withDb(async ({ db }) => {
     const limits = config({ accessFailIpMax: 2, accessFailIpWindowSec: 60, accessFailGalleryMax: 100 })
-    const first = await runStaffRequest(db, 'wrong-code', IP, NOW, limits)
-    const second = await runStaffRequest(db, 'wrong-code', IP, NOW, limits)
-    const third = await runStaffRequest(db, 'wrong-code', IP, NOW, limits)
+    const first = await signIn(db, 'wrong-code', IP, NOW, limits)
+    const second = await signIn(db, 'wrong-code', IP, NOW, limits)
+    const third = await signIn(db, 'wrong-code', IP, NOW, limits)
     assert.equal(first.status, 401)
     assert.equal(second.status, 401)
     assert.equal(third.status, 429)
@@ -134,9 +146,9 @@ test('failed access codes return 429 and the window opens again', async () => {
     const body = third.body as { error: string; errorFa: string }
     assert.equal(body.error, 'Too many requests. Try again later.')
     assert.equal(body.errorFa, 'درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید.')
-    const otherIp = await runStaffRequest(db, 'wrong-code', '203.0.113.11', NOW, limits)
+    const otherIp = await signIn(db, 'wrong-code', '203.0.113.11', NOW, limits)
     assert.equal(otherIp.status, 401)
-    const later = await runStaffRequest(db, 'wrong-code', IP, new Date(NOW.getTime() + 60_000), limits)
+    const later = await signIn(db, 'wrong-code', IP, new Date(NOW.getTime() + 60_000), limits)
     assert.equal(later.status, 401)
     const stored = JSON.stringify(await db.select().from(rateLimits))
     assert.equal(stored.includes(IP), false)
@@ -147,9 +159,9 @@ test('failed access codes return 429 and the window opens again', async () => {
 test('a gallery-wide failure limit blocks a new address', async () => {
   await withDb(async ({ db, storage }) => {
     const limits = config({ accessFailIpMax: 100, accessFailGalleryMax: 2, accessFailGalleryWindowSec: 60 })
-    assert.equal((await runPilotRequest(db, storage, 'PUT', { accessCode: 'wrong' }, '198.51.100.1', NOW, limits)).status, 401)
-    assert.equal((await runPilotRequest(db, storage, 'PUT', { accessCode: 'wrong' }, '198.51.100.2', NOW, limits)).status, 401)
-    const blocked = await runPilotRequest(db, storage, 'PUT', { accessCode: 'wrong' }, '198.51.100.3', NOW, limits)
+    assert.equal((await runPilotRequest(db, storage, 'PUT', { gallery: 'o-gallery', accessCode: 'wrong' }, '198.51.100.1', NOW, limits)).status, 401)
+    assert.equal((await runPilotRequest(db, storage, 'PUT', { gallery: 'o-gallery', accessCode: 'wrong' }, '198.51.100.2', NOW, limits)).status, 401)
+    const blocked = await runPilotRequest(db, storage, 'PUT', { gallery: 'o-gallery', accessCode: 'wrong' }, '198.51.100.3', NOW, limits)
     assert.equal(blocked.status, 429)
   })
 })
@@ -157,21 +169,21 @@ test('a gallery-wide failure limit blocks a new address', async () => {
 test('an accepted access code does not use the failure budget', async () => {
   await withDb(async ({ db }) => {
     const limits = config({ accessFailIpMax: 1, accessAcceptIpMax: 10 })
-    assert.equal((await runStaffRequest(db, 'inview', IP, NOW, limits)).status, 200)
-    assert.equal((await runStaffRequest(db, 'inview', IP, NOW, limits)).status, 200)
-    assert.equal((await runStaffRequest(db, 'inview', IP, NOW, limits)).status, 200)
+    assert.equal((await signIn(db, 'inview', IP, NOW, limits)).status, 200)
+    assert.equal((await signIn(db, 'inview', IP, NOW, limits)).status, 200)
+    assert.equal((await signIn(db, 'inview', IP, NOW, limits)).status, 200)
   })
 })
 
 test('accepted access codes stop at their own limit', async () => {
   await withDb(async ({ db }) => {
     const limits = config({ accessFailIpMax: 100, accessAcceptIpMax: 2, accessAcceptIpWindowSec: 60 })
-    assert.equal((await runStaffRequest(db, 'inview', IP, NOW, limits)).status, 200)
-    assert.equal((await runStaffRequest(db, 'inview', IP, NOW, limits)).status, 200)
-    const blocked = await runStaffRequest(db, 'inview', IP, NOW, limits)
+    assert.equal((await signIn(db, 'inview', IP, NOW, limits)).status, 200)
+    assert.equal((await signIn(db, 'inview', IP, NOW, limits)).status, 200)
+    const blocked = await signIn(db, 'inview', IP, NOW, limits)
     assert.equal(blocked.status, 429)
     assert.equal(blocked.retryAfterSeconds, 60)
-    const later = await runStaffRequest(db, 'inview', IP, new Date(NOW.getTime() + 60_000), limits)
+    const later = await signIn(db, 'inview', IP, new Date(NOW.getTime() + 60_000), limits)
     assert.equal(later.status, 200)
   })
 })
@@ -179,7 +191,7 @@ test('accepted access codes stop at their own limit', async () => {
 test('visits stop at the limit and the window opens again', async () => {
   await withDb(async ({ db, storage }) => {
     const limits = config({ visitVisitorMax: 2, visitVisitorWindowSec: 60, visitIpMax: 100 })
-    const body = { op: 'visit', kind: 'view', visitorId: VISITOR }
+    const body = { gallery: 'o-gallery', op: 'visit', kind: 'view', visitorId: VISITOR }
     assert.equal((await runPilotRequest(db, storage, 'POST', body, IP, NOW, limits)).status, 200)
     assert.equal((await runPilotRequest(db, storage, 'POST', body, IP, NOW, limits)).status, 200)
     const blocked = await runPilotRequest(db, storage, 'POST', body, IP, NOW, limits)
@@ -196,7 +208,7 @@ test('one shared address limits visits from many visitor ids', async () => {
   await withDb(async ({ db, storage }) => {
     const limits = config({ visitVisitorMax: 100, visitIpMax: 2, visitIpWindowSec: 60 })
     const send = (visitorId: string) =>
-      runPilotRequest(db, storage, 'POST', { op: 'visit', kind: 'view', visitorId }, IP, NOW, limits)
+      runPilotRequest(db, storage, 'POST', { gallery: 'o-gallery', op: 'visit', kind: 'view', visitorId }, IP, NOW, limits)
     assert.equal((await send('visitor-1')).status, 200)
     assert.equal((await send('visitor-2')).status, 200)
     assert.equal((await send('visitor-3')).status, 429)
@@ -208,21 +220,22 @@ test('public reads do not use the visit limit', async () => {
   await withDb(async ({ db, storage }) => {
     const limits = config({ visitVisitorMax: 1, visitIpMax: 1 })
     for (let i = 0; i < 3; i += 1) {
-      assert.equal((await runPilotRequest(db, storage, 'GET', null, IP, NOW, limits)).status, 200)
+      assert.equal((await runPilotRequest(db, storage, 'GET', { gallery: 'o-gallery' }, IP, NOW, limits)).status, 200)
     }
-    const unknown = await runPilotRequest(db, storage, 'POST', { op: 'other' }, IP, NOW, limits)
+    const unknown = await runPilotRequest(db, storage, 'POST', { gallery: 'o-gallery', op: 'other' }, IP, NOW, limits)
     assert.equal(unknown.status, 400)
-    assert.equal((await runPilotRequest(db, storage, 'POST', { op: 'visit', kind: 'view', visitorId: VISITOR }, IP, NOW, limits)).status, 200)
+    assert.equal((await runPilotRequest(db, storage, 'POST', { gallery: 'o-gallery', op: 'visit', kind: 'view', visitorId: VISITOR }, IP, NOW, limits)).status, 200)
   })
 })
 
 test('leads stop at the limit and do not store the extra row', async () => {
   await withDb(async ({ db, storage }) => {
     const limits = config({ leadVisitorMax: 2, leadVisitorWindowSec: 60, leadIpMax: 100 })
-    await runPilotRequest(db, storage, 'GET', null, IP, NOW, limits)
+    await runPilotRequest(db, storage, 'GET', { gallery: 'o-gallery' }, IP, NOW, limits)
     const [gallery] = await db.select().from(galleries).where(eq(galleries.slug, 'o-gallery')).limit(1)
     await db.insert(works).values({ id: 'work0001', galleryId: gallery.id, title: 'Sample work' })
     const body = {
+      gallery: 'o-gallery',
       op: 'lead',
       kind: 'save',
       phone: '09120000000',

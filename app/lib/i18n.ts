@@ -82,7 +82,7 @@ const en = {
   notFoundBody: 'This page does not exist. Scan the QR code at the gallery again.',
   loadFailed: 'The page did not load',
   loadFailedBody: 'Try again in a moment.',
-  goToGallery: 'Go to the gallery',
+  goHome: 'Go to the home page',
 }
 type Dict = typeof en
 
@@ -163,7 +163,7 @@ const fa: Dict = {
   notFoundBody: 'این صفحه وجود ندارد. کد QR را در گالری دوباره اسکن کنید.',
   loadFailed: 'صفحه بارگذاری نشد',
   loadFailedBody: 'چند لحظه بعد دوباره تلاش کنید.',
-  goToGallery: 'رفتن به گالری',
+  goHome: 'رفتن به صفحه اصلی',
 }
 
 export function toFa(v: number | string): string {
