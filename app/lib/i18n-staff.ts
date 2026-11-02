@@ -147,6 +147,7 @@ const en = {
   owner: 'Owner',
   editor: 'Editor',
   viewer: 'Viewer',
+  editorRole: 'Editor',
   role: 'Role',
   changeRole: 'Change role',
   disable: 'Disable',
@@ -156,6 +157,12 @@ const en = {
   signOutUser: 'Sign out all sessions',
   saved: 'Saved',
   noTeam: 'No staff members yet.',
+  noRows: 'Nothing here yet.',
+  active: 'Active',
+  disabled: 'Disabled',
+  invited: 'Invited',
+  lastSignIn: 'Last sign-in',
+  never: 'None yet',
 }
 
 export type StaffDict = typeof en
@@ -303,6 +310,7 @@ const fa: StaffDict = {
   owner: 'مالک',
   editor: 'ویرایشگر',
   viewer: 'بیننده',
+  editorRole: 'ویرایشگر',
   role: 'نقش',
   changeRole: 'تغییر نقش',
   disable: 'غیرفعال کردن',
@@ -312,6 +320,12 @@ const fa: StaffDict = {
   signOutUser: 'خروج از همه جلسه‌ها',
   saved: 'ذخیره شد',
   noTeam: 'هنوز کارمندی نیست.',
+  noRows: 'هنوز موردی نیست.',
+  active: 'فعال',
+  disabled: 'غیرفعال',
+  invited: 'دعوت‌شده',
+  lastSignIn: 'آخرین ورود',
+  never: 'هنوز ثبت نشده',
 }
 
 export const staffDictionaries: Record<Lang, StaffDict> = { en, fa }
