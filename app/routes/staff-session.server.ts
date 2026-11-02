@@ -4,13 +4,15 @@ import { runSignIn } from '../../server/rate-limit'
 import { signIn, signOut } from '../../server/accounts'
 import { can, principalFor, type Action } from '../../server/authz'
 import { staffHeaders, staffNext, staffReport, staffTenant } from '../../server/staff'
-import { loadStaffRecord } from '../../server/gallery-record'
+import { loadStaffRecord, tenantWithShow } from '../../server/gallery-record'
 
 export async function galleryData(request: Request, slug: string, action: Action) {
   const db = database()
-  const { principal, tenant } = await staffTenant(db, request, slug, action)
+  const { principal, tenant: current } = await staffTenant(db, request, slug, action)
+  const tenant = await tenantWithShow(db, current, new URL(request.url).searchParams.get('show'))
+  if (!tenant) throw new Response('Not found', { status: 404, headers: staffHeaders() })
   const permissions = (['edit-catalogue', 'export-leads', 'manage-staff', 'create-qr'] as const).filter((permission) => can(principal, permission, tenant.gallery.id))
-  return { gallery: { slug: tenant.gallery.slug, nameEn: tenant.gallery.nameEn, nameFa: tenant.gallery.nameFa }, permissions, ...await loadStaffRecord(db, tenant), report: await staffReport(db, principal, tenant.gallery.id) }
+  return { gallery: { slug: tenant.gallery.slug, nameEn: tenant.gallery.nameEn, nameFa: tenant.gallery.nameFa }, permissions, show: { id: tenant.show.id, status: tenant.show.status, isCurrent: tenant.show.id === current.show.id, galleryLive: tenant.gallery.status === 'live' }, ...await loadStaffRecord(db, tenant), report: await staffReport(db, principal, tenant.gallery.id, tenant.show.id) }
 }
 
 export function secureFrom(request: Request): boolean {

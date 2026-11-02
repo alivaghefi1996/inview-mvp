@@ -11,13 +11,13 @@ console.error = (...args: unknown[]) => {
   reactError(...args)
 }
 
-export function renderStaff(element: React.ReactElement, lang: 'en' | 'fa', location = '/staff/sign-in', actionData?: unknown) {
+export function renderStaff(element: React.ReactElement, lang: 'en' | 'fa', location = '/staff/sign-in', actionData?: unknown, loaderData?: object) {
   const Stub = createRoutesStub([{ id: 'root', path: '*', Component: () => element }])
   return renderToString(
     createElement(Stub, {
       initialEntries: [location],
       hydrationData: {
-        loaderData: { root: { lang, dir: lang === 'fa' ? 'rtl' : 'ltr' } },
+        loaderData: { root: { ...loaderData, lang, dir: lang === 'fa' ? 'rtl' : 'ltr' } },
         ...(actionData === undefined ? {} : { actionData: { root: actionData } }),
       },
     }),

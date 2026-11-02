@@ -137,6 +137,7 @@ merges a sync pull request when a fast-forward is not possible.
 | `O_GALLERY_ACCESS_CODE` | Access code for O Gallery. Required in production when no saved hash exists. The server stores only a scrypt hash. |
 | `MEDIA_DIR` | Local media folder when S3 is not set |
 | `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_HOST` | Garage / S3 |
+| `RESEND_API_KEY`, `MAIL_FROM` | Password reset email. While either is unset, `/staff/forgot-password` tells staff to ask their gallery owner. |
 | `RATE_LIMIT_*` | Rate-limit salt, counts and windows. The server does not store the address. See [Rate limits](#rate-limits) for each variable. |
 | `S3_PUBLIC_BASE` | Public origin plus the bucket path. Production: `https://inview-media.moshes.io/inview` |
 | `S3_OBJECT_PREFIX` | Object key prefix the media route can serve. Production: `u` |
