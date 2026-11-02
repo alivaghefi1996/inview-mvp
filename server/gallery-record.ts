@@ -159,7 +159,13 @@ function text(value: unknown, max: number): string {
 
 async function logoUrl(db: Db, galleryId: string, logoMediaId: string | null): Promise<string | null> {
   if (!logoMediaId) return null
-  const [row] = await db.select().from(media).where(and(eq(media.id, logoMediaId), eq(media.galleryId, galleryId))).limit(1)
+  const [row] = await db
+    .select()
+    .from(media)
+    .where(and(eq(media.id, logoMediaId), eq(media.galleryId, galleryId)))
+    .limit(1)
+    .prepare('gallery_logo')
+    .execute()
   if (!row) return null
   return displayVariant(row.variants)
 }
@@ -228,6 +234,8 @@ async function readRecord(
     .leftJoin(media, and(eq(works.mediaId, media.id), eq(media.galleryId, gallery.id)))
     .where(and(eq(showWorks.showId, show.id), eq(works.galleryId, gallery.id)))
     .orderBy(asc(showWorks.sortOrder))
+    .prepare('record_works')
+    .execute()
 
   const workDtos: GalleryWorkDto[] = linked.map(
     (row: { work: typeof works.$inferSelect; variants: Record<string, string> | null }) => ({
@@ -399,6 +407,8 @@ async function publicTenantBySlug(db: Db, slug: string): Promise<GalleryTenant |
     .where(eq(galleries.slug, slug))
     .orderBy(sql`${shows.status} = 'published' DESC`, desc(shows.updatedAt))
     .limit(1)
+    .prepare('public_tenant_by_slug')
+    .execute()
   if (!row) return null
   return { gallery: row.gallery, show: row.show }
 }
