@@ -32,7 +32,7 @@ export function workText(work: PilotWork, lang: Lang) {
   }
 }
 
-function coverWork(record: PilotRecord): PilotWork | undefined {
+export function coverWork(record: PilotRecord): PilotWork | undefined {
   return record.works.find((work) => !work.sample && work.image) ?? record.works.find((work) => work.image)
 }
 
@@ -86,26 +86,14 @@ function OLanding({ record, preview = false, lang }: { record: PilotRecord, prev
   const brand = pick(language, record.name, record.nameFa)
   const cover = preview ? undefined : coverWork(record)
   const ShowHeading = preview ? 'h2' : 'h1'
-  const initial = (language === 'fa' ? (record.nameFa || record.name) : (record.name || record.nameFa)).trim().slice(0, 1) || 'O'
 
   return (
     <div className="welcome o-landing">
       <div className="pad intro reveal">
-        <p className="eyebrow">{copy.currentShow}</p>
-        {title ? (
-          <>
-            <ShowHeading className="show-title">{title}</ShowHeading>
-            <span className="ink-rule" aria-hidden />
-            {empty && <p className="muted">{copy.emptyBody}</p>}
-          </>
-        ) : (
-          <>
-            <ShowHeading className="show-title">{brand}</ShowHeading>
-            <span className="ink-rule" aria-hidden />
-            {empty && <p className="show-kind">{copy.emptyBody}</p>}
-          </>
-        )}
-        {(dates || hours) && <p className="muted small">{[dates, hours].filter(Boolean).join(' · ')}</p>}
+        <ShowHeading className="show-title">{title || brand}</ShowHeading>
+        <span className="ink-rule" aria-hidden />
+        <p className="page-context">{[copy.currentShow, dates, hours].filter(Boolean).join(' · ')}</p>
+        {empty && <p className="o-empty-body">{copy.emptyBody}</p>}
         <div className="o-actions">
           {preview ? (
             <>
@@ -137,10 +125,10 @@ function OLanding({ record, preview = false, lang }: { record: PilotRecord, prev
         </figure>
       )}
       {!preview && !cover && (
-        <aside className="o-atmosphere" aria-hidden>
-          <span className="o-atmosphere-mark">{initial}</span>
-          <span className="o-atmosphere-label">{brand}</span>
-        </aside>
+        <div className="o-blank-wall" aria-hidden>
+          <span className="o-blank-frame" />
+          <span className="o-blank-label"><i /><i /><i /></span>
+        </div>
       )}
     </div>
   )
@@ -268,9 +256,9 @@ export function OWorks({ record }: { record: PilotRecord }) {
   return (
     <div className="reveal">
       <div className="pad">
-        <p className="eyebrow">{copy.worksTitle}</p>
         <h1 className="page-title">{title || copy.worksTitle}</h1>
         <span className="ink-rule" aria-hidden />
+        {title && <p className="page-context">{copy.worksTitle}</p>}
         {allReal.length === 0 && <p className="muted">{copy.emptyBody}</p>}
       </div>
       {allReal.length > 0 && (
@@ -322,9 +310,9 @@ export function OPrices({ record }: { record: PilotRecord }) {
       {(record.demo || record.works.some((work) => work.sample)) && (
         <p className="demo-banner" role="note">{record.demo ? copy.demoNote : t.samplePricesNote}</p>
       )}
-      <p className="eyebrow">{name}</p>
       <h1 className="page-title">{t.priceList}</h1>
       <span className="ink-rule" aria-hidden />
+      <p className="page-context">{name}</p>
       {title ? <p className="prices-subtitle">{title}</p> : null}
       <p className="small">{t.allPricesToman}</p>
       <WorkList works={record.works} slug={record.slug} />
@@ -429,7 +417,6 @@ export function OAbout({ record }: { record: PilotRecord }) {
   const artists = artistCounts(record.works.filter((work) => !work.sample), lang)
   return (
     <div className="pad about reveal">
-      <p className="eyebrow">{copy.currentShow}</p>
       <h1 className="page-title">{pick(lang, record.name, record.nameFa)}</h1>
       <span className="ink-rule" aria-hidden />
       {text ? <p className="reading">{text}</p> : <p className="muted">{copy.emptyNote}</p>}

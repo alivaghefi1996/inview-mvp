@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { LangSwitch } from '../../components/LangSwitch'
 import { useT } from '../../lib/i18n'
 import { SkipLink } from '../../components/SkipLink'
+import { coverWork, WorkImage } from '../visitor/OGalleryPages'
 import { oCopy, pick, type PilotRecord, type PilotWork } from '../../lib/pilot'
 
 export default function OGallerySite({ record }: { record: PilotRecord }) {
@@ -16,6 +17,7 @@ export default function OGallerySite({ record }: { record: PilotRecord }) {
   const hours = pick(lang, record.hours, record.hoursFa)
   const real = record.works.filter((work) => !work.sample)
   const samples = record.works.filter((work) => work.sample)
+  const cover = coverWork(record)
 
   useEffect(() => {
     document.title = title ? `${name}: ${title}` : name
@@ -41,15 +43,28 @@ export default function OGallerySite({ record }: { record: PilotRecord }) {
       </header>
       <main id="main" tabIndex={-1}>
         <section className="o-site-intro" id="current">
-          <p className="muted">{copy.currentShow}{dates ? `, ${dates}` : ''}</p>
-          <h1>{title || name}</h1>
-          {real.length === 0 && <p className="site-lead">{copy.emptyBody}</p>}
-          {text && <p className="site-lead">{text}</p>}
-          <div className="row gap wrap">
-            <Link className="btn btn-primary" to={`/g/${record.slug}/works`}>{copy.seeWorks}</Link>
-            <Link className="btn btn-outline" to={`/g/${record.slug}/prices`}>{copy.priceList}</Link>
-            {record.pdfUrl && <a className="btn btn-outline" href={record.pdfUrl}>{copy.downloadPdf}</a>}
+          <div className="o-site-intro-text">
+            <h1>{title || name}</h1>
+            <span className="ink-rule" aria-hidden />
+            <p className="page-context">{copy.currentShow}{dates ? `, ${dates}` : ''}</p>
+            {real.length === 0 && <p className="site-lead">{copy.emptyBody}</p>}
+            {text && <p className="site-lead">{text}</p>}
+            <div className="row gap wrap">
+              <Link className="btn btn-primary" to={`/g/${record.slug}/works`}>{copy.seeWorks}</Link>
+              <Link className="btn btn-outline" to={`/g/${record.slug}/prices`}>{copy.priceList}</Link>
+              {record.pdfUrl && <a className="btn btn-outline" href={record.pdfUrl}>{copy.downloadPdf}</a>}
+            </div>
           </div>
+          {cover ? (
+            <figure className="o-site-cover">
+              <WorkImage work={cover} alt={pick(lang, cover.title, cover.titleFa ?? '')} sizes="(min-width: 960px) 50vw, 100vw" priority />
+            </figure>
+          ) : (
+            <div className="o-blank-wall" aria-hidden>
+              <span className="o-blank-frame" />
+              <span className="o-blank-label"><i /><i /><i /></span>
+            </div>
+          )}
         </section>
         <section className="site-section" id="works">
           {real.length > 0 && (
@@ -61,7 +76,6 @@ export default function OGallerySite({ record }: { record: PilotRecord }) {
           {samples.length > 0 && (
             <>
               <h2>{copy.samplesTitle}</h2>
-              <p className="sample-note">{copy.sampleBanner}</p>
               <WorkGrid works={samples} lang={lang} slug={record.slug} galleryName={name} />
             </>
           )}
@@ -84,7 +98,7 @@ function WorkGrid({ works, lang, slug, galleryName }: { works: PilotWork[], lang
     <div className="site-grid">
       {works.map((work) => (
         <Link key={work.id} to={`/g/${slug}/works/${work.id}`} className="site-card link">
-          {work.image && <img src={work.image} alt="" />}
+          {work.image && <span className="site-card-mat"><img src={work.image} alt="" loading="lazy" decoding="async" /></span>}
           <h3>{work.title}</h3>
           {[work.artist, work.medium, work.size].some(Boolean) && <p className="muted small">{[work.artist, work.medium, work.size].filter(Boolean).join(' · ')}</p>}
           {work.sample && <p className="sample-note">{copy.sampleBanner}</p>}
