@@ -9,6 +9,10 @@ import { can } from '../../server/authz'
 import { useStaffT } from '../lib/i18n-staff'
 import { GalleryStaffLayout } from '../pages/gallery/GalleryStaffLayout'
 import { requireStaffOrigin } from './staff-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { staffDictionaries } from '../lib/i18n-staff'
+
+export const meta = panelMeta(staffDictionaries, 'createQr')
 
 export const headers = staffHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {
@@ -35,7 +39,7 @@ export default function StaffQr() {
   const result = useActionData<typeof action>()
   const { t } = useStaffT()
   return <GalleryStaffLayout gallery={gallery} permissions={permissions} titleKey="createQr">{result?.error && <p role="alert">{t.requestFailed}</p>}
-    <Form method="post"><label>{t.qrLabel}<input name="label" required maxLength={120} /></label><button type="submit">{t.createQr}</button></Form>
-    <ul>{codes.map((qr) => <li key={qr.code}>{qr.label} <a href={`/staff/${gallery.slug}/qr/${encodeURIComponent(qr.code)}.svg`} download>{t.downloadSvg}</a></li>)}</ul>
+    <Form className="staff-form" method="post"><label>{t.qrLabel}<input name="label" required maxLength={120} /></label><button className="btn btn-primary" type="submit">{t.createQr}</button></Form>
+    <ul className="staff-qr-list">{codes.map((qr) => <li key={qr.code}><span>{qr.label}</span><a href={`/staff/${gallery.slug}/qr/${encodeURIComponent(qr.code)}.svg`} download>{t.downloadSvg}</a></li>)}</ul>
   </GalleryStaffLayout>
 }

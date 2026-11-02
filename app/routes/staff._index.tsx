@@ -3,6 +3,10 @@ import { database } from '../../database/context'
 import { staffGalleries, staffHeaders, staffPrincipal } from '../../server/staff'
 import { useStaffT } from '../lib/i18n-staff'
 import { StaffLangSwitch } from '../components/StaffLangSwitch'
+import { panelMeta } from '../lib/panel-meta'
+import { staffDictionaries } from '../lib/i18n-staff'
+
+export const meta = panelMeta(staffDictionaries, 'galleries')
 
 export const headers = staffHeaders
 export async function loader({ request }: { request: Request }) {
@@ -16,5 +20,5 @@ export async function loader({ request }: { request: Request }) {
 export default function StaffIndex() {
   const { galleries } = useLoaderData<typeof loader>()
   const { t, lang, dir } = useStaffT()
-  return <main className="staff-main" dir={dir}><StaffLangSwitch /><h1>{t.galleries}</h1><ul>{galleries.map((gallery) => <li key={gallery.id}><Link to={gallery.path}>{lang === 'fa' ? gallery.nameFa || gallery.nameEn : gallery.nameEn}</Link></li>)}</ul>{!galleries.length && <p>{t.noGalleries}</p>}<form method="post" action="/staff/sign-out"><button type="submit">{t.signOut}</button></form></main>
+  return <main className={`staff-main staff-home staff-${lang}`} dir={dir}><StaffLangSwitch /><h1>{t.galleries}</h1><ul className="staff-qr-list">{galleries.map((gallery) => <li key={gallery.id}><Link to={gallery.path}>{lang === 'fa' ? gallery.nameFa || gallery.nameEn : gallery.nameEn}</Link></li>)}</ul>{!galleries.length && <p>{t.noGalleries}</p>}<form method="post" action="/staff/sign-out"><button className="btn btn-outline" type="submit">{t.signOut}</button></form></main>
 }

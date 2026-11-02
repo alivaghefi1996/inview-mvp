@@ -5,6 +5,10 @@ import { principalFor } from '../../server/authz'
 import { StaffLangSwitch } from '../components/StaffLangSwitch'
 import { useOpsT } from '../lib/i18n-ops'
 import { privateHeaders } from './ops-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { opsDictionaries } from '../lib/i18n-ops'
+
+export const meta = panelMeta(opsDictionaries, 'signIn')
 
 export const headers = privateHeaders
 
@@ -34,7 +38,7 @@ export default function OperatorSignIn() {
       } catch { setError(t.error) } finally { setBusy(false) }
     }}>
       <div className="row between"><strong>{t.brand}</strong><StaffLangSwitch /></div>
-      <p className="ops-eyebrow">{t.panel}</p><h1>{t.signIn}</h1>
+      <span className="ink-rule" aria-hidden /><p className="ops-eyebrow">{t.panel}</p><h1>{t.signIn}</h1>
       <label>{t.identifier}<input name="identifier" autoComplete="username" maxLength={320} required dir="ltr" /></label>
       <label>{t.password}<input name="password" type="password" autoComplete="current-password" required maxLength={1024} dir="ltr" /></label>
       {error && <p className="error" role="alert">{error}</p>}

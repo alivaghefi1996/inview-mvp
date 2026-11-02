@@ -4,6 +4,10 @@ import { createGallery } from '../../server/ops'
 import { OneTimeValue, OpsSubmit } from '../components/OpsUi'
 import { useOpsT } from '../lib/i18n-ops'
 import { actionFailure, field, operatorFor, privateHeaders, requireOrigin } from './ops-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { opsDictionaries } from '../lib/i18n-ops'
+
+export const meta = panelMeta(opsDictionaries, 'newGallery')
 
 export const headers = privateHeaders
 export async function loader({ request }: { request: Request }) {

@@ -4,6 +4,10 @@ import { loadStaffRecord } from '../../server/gallery-record'
 import { staffHeaders, staffTenant } from '../../server/staff'
 import { OLandingPreview } from '../pages/visitor/OGalleryPages'
 import { useStaffT } from '../lib/i18n-staff'
+import { panelMeta } from '../lib/panel-meta'
+import { staffDictionaries } from '../lib/i18n-staff'
+
+export const meta = panelMeta(staffDictionaries, 'preview')
 
 export const headers = staffHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {

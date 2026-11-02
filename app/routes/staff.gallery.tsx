@@ -3,6 +3,10 @@ import GalleryEditor from '../pages/gallery/GalleryEditor'
 import { GalleryStaffLayout } from '../pages/gallery/GalleryStaffLayout'
 import { staffHeaders } from '../../server/staff'
 import { galleryData } from './staff-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { staffDictionaries } from '../lib/i18n-staff'
+
+export const meta = panelMeta(staffDictionaries, 'pageTitle')
 
 export const headers = staffHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {

@@ -7,7 +7,7 @@
 
 ## 1. Context
 
-The product is described in the [README](../../README.md).
+The product is described in the [README](https://github.com/m-esm/inview-mvp/blob/pilot-o-gallery/README.md).
 
 The current code is a Vite and React single-page app (SPA). The O Gallery pilot adds a
 JSON file store (`server/pilot-store.mjs`). This store keeps images as base64 text.

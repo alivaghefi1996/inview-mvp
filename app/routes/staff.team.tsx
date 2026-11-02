@@ -7,6 +7,10 @@ import { staffHeaders, staffTenant } from '../../server/staff'
 import { useStaffT } from '../lib/i18n-staff'
 import { GalleryStaffLayout } from '../pages/gallery/GalleryStaffLayout'
 import { requireStaffOrigin } from './staff-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { staffDictionaries } from '../lib/i18n-staff'
+
+export const meta = panelMeta(staffDictionaries, 'team')
 
 export const headers = staffHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {
@@ -49,10 +53,10 @@ export default function StaffTeam() {
   const { t } = useStaffT()
   return <GalleryStaffLayout gallery={gallery} permissions={['edit-catalogue', 'manage-staff', 'create-qr']} titleKey="team">
     {result?.error && <p role="alert">{t.requestFailed}</p>}{result?.saved && <p role="status">{t.saved}</p>}
-    {result?.invitePath && <label>{t.inviteLink}<input readOnly value={result.invitePath} dir="ltr" onFocus={(event) => event.currentTarget.select()} /></label>}
-    <Form method="post"><label>{t.identifier}<input name="identifier" required maxLength={320} dir="ltr" /></label><RoleSelect /><button type="submit" name="intent" value="invite">{t.invite}</button></Form>
-    {team.map((member) => <section key={member.userId}><h2>{member.name}</h2><p>{t[member.role]}</p><Form method="post"><input type="hidden" name="userId" value={member.userId} /><RoleSelect value={member.role} />
-      {(['role', member.status === 'disabled' ? 'enable' : 'disable', 'remove', 'reset', 'sign-out'] as const).map((intent) => <button type="submit" name="intent" value={intent} key={intent}>{intent === 'role' ? t.changeRole : intent === 'sign-out' ? t.signOutUser : t[intent]}</button>)}
+    {result?.invitePath && <label className="staff-once">{t.inviteLink}<input readOnly value={result.invitePath} dir="ltr" onFocus={(event) => event.currentTarget.select()} /></label>}
+    <Form className="staff-form" method="post"><label>{t.identifier}<input name="identifier" required maxLength={320} dir="ltr" /></label><RoleSelect /><button className="btn btn-primary" type="submit" name="intent" value="invite">{t.invite}</button></Form>
+    {team.map((member) => <section className="staff-member" key={member.userId}><h2>{member.name}</h2><p>{t[member.role]}</p><Form className="staff-form" method="post"><input type="hidden" name="userId" value={member.userId} /><RoleSelect value={member.role} />
+      <div className="staff-actions">{(['role', member.status === 'disabled' ? 'enable' : 'disable', 'remove', 'reset', 'sign-out'] as const).map((intent) => <button className="btn btn-outline small-btn" type="submit" name="intent" value={intent} key={intent}>{intent === 'role' ? t.changeRole : intent === 'sign-out' ? t.signOutUser : t[intent]}</button>)}</div>
     </Form></section>)}{!team.length && <p>{t.noTeam}</p>}
   </GalleryStaffLayout>
 }

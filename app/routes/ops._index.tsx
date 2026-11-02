@@ -4,6 +4,10 @@ import { listGalleries, recentAudit } from '../../server/ops'
 import { pingDatabase, runChecks } from '../../server/ready'
 import { useOpsT } from '../lib/i18n-ops'
 import { operatorFor, privateHeaders } from './ops-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { opsDictionaries } from '../lib/i18n-ops'
+
+export const meta = panelMeta(opsDictionaries, 'overview')
 
 export const headers = privateHeaders
 export async function loader({ request, context }: { request: Request; context: AppLoadContext }) {
