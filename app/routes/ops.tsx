@@ -14,7 +14,7 @@ export default function OpsLayout() {
   const { t, dir } = useOpsT()
   const { manageOperators } = useLoaderData<typeof loader>()
   return <div className="ops-shell" dir={dir}>
-    <a className="ops-skip" href="#ops-content">{t.overview}</a>
+    <a className="ops-skip" href="#ops-content">{t.skip}</a>
     <header className="ops-header">
       <Link className="ops-brand" to="/ops">{t.brand}<span>{t.panel}</span></Link>
       <nav aria-label={t.panel}><Link to="/ops">{t.overview}</Link><Link to="/ops/galleries/new">{t.newGallery}</Link>

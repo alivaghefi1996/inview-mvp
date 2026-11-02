@@ -4,6 +4,10 @@ import { galleryActivity } from '../../server/ops-data'
 import { GalleryLinks } from '../components/OpsUi'
 import { useOpsT } from '../lib/i18n-ops'
 import { operatorGallery, privateHeaders } from './ops-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { opsDictionaries } from '../lib/i18n-ops'
+
+export const meta = panelMeta(opsDictionaries, 'activity')
 
 export const headers = privateHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {

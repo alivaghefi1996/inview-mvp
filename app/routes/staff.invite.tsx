@@ -5,6 +5,10 @@ import { readInvite } from '../../server/invitations'
 import { StaffLangSwitch } from '../components/StaffLangSwitch'
 import { useOpsT } from '../lib/i18n-ops'
 import { privateHeaders } from './ops-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { opsDictionaries } from '../lib/i18n-ops'
+
+export const meta = panelMeta(opsDictionaries, 'invitation')
 
 export const headers = privateHeaders
 

@@ -4,6 +4,10 @@ import { auditChoices, auditPage } from '../../server/ops-admin'
 import { OpsSubmit } from '../components/OpsUi'
 import { useOpsT } from '../lib/i18n-ops'
 import { operatorFor, privateHeaders } from './ops-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { opsDictionaries } from '../lib/i18n-ops'
+
+export const meta = panelMeta(opsDictionaries, 'audit')
 
 export const headers = privateHeaders
 export async function loader({ request }: { request: Request }) {

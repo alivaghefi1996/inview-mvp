@@ -1,6 +1,10 @@
 import { data, redirect, useActionData } from 'react-router'
 import { StaffSignIn, type SignInError } from '../pages/gallery/StaffSignIn'
 import { redirectIfSignedIn, signInAction } from './staff-session.server'
+import { panelMeta } from '../lib/panel-meta'
+import { staffDictionaries } from '../lib/i18n-staff'
+
+export const meta = panelMeta(staffDictionaries, 'signInTitle')
 
 export function headers() {
   return { 'Cache-Control': 'no-store' }
