@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { LangSwitch } from '../../components/LangSwitch'
 import { useT } from '../../lib/i18n'
 import { SkipLink } from '../../components/SkipLink'
-import { coverWork, WorkImage } from '../visitor/OGalleryPages'
+import { coverWork, showDates, workText, WorkImage } from '../visitor/OGalleryPages'
 import { oCopy, pick, type PilotRecord, type PilotWork } from '../../lib/pilot'
 
 export default function OGallerySite({ record }: { record: PilotRecord }) {
@@ -11,7 +11,7 @@ export default function OGallerySite({ record }: { record: PilotRecord }) {
   const name = pick(lang, record.name, record.nameFa)
   const copy = oCopy(lang, name)
   const title = pick(lang, record.showTitle, record.showTitleFa)
-  const dates = pick(lang, record.dates, record.datesFa)
+  const dates = showDates(record, lang)
   const text = pick(lang, record.text, record.textFa)
   const address = pick(lang, record.address, record.addressFa)
   const hours = pick(lang, record.hours, record.hoursFa)
@@ -57,7 +57,7 @@ export default function OGallerySite({ record }: { record: PilotRecord }) {
           </div>
           {cover ? (
             <figure className="o-site-cover">
-              <WorkImage work={cover} alt={pick(lang, cover.title, cover.titleFa ?? '')} sizes="(min-width: 960px) 50vw, 100vw" priority />
+              <WorkImage work={cover} alt={workText(cover, lang).title} sizes="(min-width: 960px) 50vw, 100vw" priority />
             </figure>
           ) : (
             <div className="o-blank-wall" aria-hidden>
@@ -96,15 +96,18 @@ function WorkGrid({ works, lang, slug, galleryName }: { works: PilotWork[], lang
   const copy = oCopy(lang, galleryName)
   return (
     <div className="site-grid">
-      {works.map((work) => (
-        <Link key={work.id} to={`/g/${slug}/works/${work.id}`} className="site-card link">
-          {work.image && <span className="site-card-mat"><img src={work.image} alt="" loading="lazy" decoding="async" /></span>}
-          <h3>{work.title}</h3>
-          {[work.artist, work.medium, work.size].some(Boolean) && <p className="muted small">{[work.artist, work.medium, work.size].filter(Boolean).join(' · ')}</p>}
-          {work.sample && <p className="sample-note">{copy.sampleBanner}</p>}
-          <p className="small"><strong>{work.status === 'sold' ? t.sold : work.price == null ? t.priceOnRequest : `${n(work.price)} ${t.toman}`}</strong></p>
-        </Link>
-      ))}
+      {works.map((work) => {
+        const text = workText(work, lang)
+        return (
+          <Link key={work.id} to={`/g/${slug}/works/${work.id}`} className="site-card link">
+            {work.image && <span className="site-card-mat"><img src={work.image} alt="" loading="lazy" decoding="async" /></span>}
+            <h3>{text.title}</h3>
+            {[text.artist, text.medium, text.size].some(Boolean) && <p className="muted small">{[text.artist, text.medium, text.size].filter(Boolean).join(' · ')}</p>}
+            {work.sample && <p className="sample-note">{copy.sampleBanner}</p>}
+            <p className="small"><strong>{work.status === 'sold' ? t.sold : work.price == null ? t.priceOnRequest : `${n(work.price)} ${t.toman}`}</strong></p>
+          </Link>
+        )
+      })}
     </div>
   )
 }
