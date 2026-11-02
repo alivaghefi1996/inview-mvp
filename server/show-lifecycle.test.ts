@@ -13,7 +13,7 @@ import type { AppDatabase } from '../database/context.ts'
 import { AccountInputError, createUser, createUserSession } from './accounts.ts'
 import { createApiApp } from './api-app.ts'
 import { ensureOGalleryTenant } from './gallery-bootstrap.ts'
-import { loadPublicPage } from './gallery-record.ts'
+import { galleryBetweenShows, loadPublicPage } from './gallery-record.ts'
 import { archiveShow, galleryShows, publishShow, startNewShow } from './shows.ts'
 import { PermissionError } from './team.ts'
 import { createTestDb } from './test-db.ts'
@@ -138,5 +138,19 @@ test('HAD-121 only an editor of the gallery can change its shows', async () => {
     await assert.rejects(publishShow(db, principal, galleryId, foreign.id), AccountInputError)
     await assert.rejects(archiveShow(db, principal, galleryId, foreign.id), AccountInputError)
     await assert.rejects(startNewShow(db, principal, other.id), PermissionError)
+  })
+})
+
+test('HAD-121 a live gallery between shows answers with its name, and other galleries do not', async () => {
+  await withGallery(async ({ db, galleryId, showA, principal }) => {
+    assert.equal(await galleryBetweenShows(db, 'o-gallery'), null)
+    await db.update(shows).set({ titleEn: 'Show A' }).where(eq(shows.id, showA))
+    await archiveShow(db, principal, galleryId, showA)
+    const [gallery] = await db.select().from(galleries).where(eq(galleries.id, galleryId))
+    assert.deepEqual(await galleryBetweenShows(db, 'o-gallery'), { nameEn: gallery.nameEn, nameFa: gallery.nameFa })
+
+    await db.update(galleries).set({ status: 'paused' }).where(eq(galleries.id, galleryId))
+    assert.equal(await galleryBetweenShows(db, 'o-gallery'), null)
+    assert.equal(await galleryBetweenShows(db, 'missing-gallery'), null)
   })
 })

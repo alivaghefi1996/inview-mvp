@@ -1,7 +1,7 @@
 import express from 'express'
 import type { ErrorRequestHandler, Express, Request } from 'express'
 import { media } from '../database/schema'
-import { clearPublicRecordCache, loadStaffRecord, publishGalleryRecordForSession, tenantBySlug } from './gallery-record'
+import { clearPublicRecordCache, loadStaffRecord, publishGalleryRecordForSession, tenantBySlug, tenantWithShow } from './gallery-record'
 import { displayVariant, processAndStoreImage, UploadError } from './images'
 import { beginUpload, clientIpFrom, principalFromCode, runPilotRequest, writeApiResult, type ApiResult } from './rate-limit'
 import { requestIsSecure } from './staff-session'
@@ -234,7 +234,9 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
   app.get('/api/v1/pilot/staff/record', async (req, res) => {
     try {
       const { tenant } = await apiTenant(db, req, req.query.gallery, 'view-report')
-      sendJson(res, 200, await loadStaffRecord(db, tenant))
+      const selected = await tenantWithShow(db, tenant, showQuery(req))
+      if (!selected) throw new Response('Not found', { status: 404 })
+      sendJson(res, 200, await loadStaffRecord(db, selected))
     } catch (error) {
       if (!apiFailure(res, error)) sendJson(res, 500, SERVER_ERROR)
     }

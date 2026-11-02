@@ -12,6 +12,7 @@ import {
   uploadImage,
   UploadProblemError,
   type StaffReport,
+  staffShowQuery,
 } from '../../lib/staff-api'
 
 type ServerText = { error?: string; errorFa?: string }
@@ -226,7 +227,11 @@ function DayField({
   )
 }
 
-export default function GalleryEditor({ initialRecord, initialReport = null, reportOnly = false, canExport = false }: { initialRecord: PilotRecord; initialReport?: StaffReport | null; reportOnly?: boolean; canExport?: boolean }) {
+type EditorShow = { id: string; status: string; isCurrent: boolean; galleryLive: boolean }
+
+export default function GalleryEditor({ initialRecord, initialReport = null, reportOnly = false, canExport = false, show }: { initialRecord: PilotRecord; initialReport?: StaffReport | null; reportOnly?: boolean; canExport?: boolean; show?: EditorShow }) {
+  const nextShow = show?.status === 'draft' && show.galleryLive
+  const pastShow = show?.status === 'archived'
   const qrAddress = `/g/${initialRecord.slug}`
   const { t, lang, format } = useStaffT()
   const [draft, setDraft] = useState<PilotRecord>(initialRecord)
@@ -257,7 +262,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
   }
 
   async function loadRecord() {
-    const response = await fetch(`/api/v1/pilot/staff/record?gallery=${encodeURIComponent(initialRecord.slug)}`, { cache: 'no-store' })
+    const response = await fetch(`/api/v1/pilot/staff/record?${staffShowQuery(initialRecord.slug, show?.id)}`, { cache: 'no-store' })
     if (!response.ok) throw new Error(String(response.status))
     const state = await response.json()
     adopt(state.record)
@@ -265,7 +270,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
 
   async function loadReport() {
     try {
-      setStats(await fetchStaffReport(initialRecord.slug))
+      setStats(await fetchStaffReport(initialRecord.slug, show?.id))
       setReportFailed(false)
     } catch {
       setStats(null)
@@ -320,7 +325,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
       const res = await fetch('/api/v1/pilot', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gallery: initialRecord.slug, record: draft }),
+        body: JSON.stringify({ gallery: initialRecord.slug, show: show?.id, record: draft }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -329,7 +334,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
       }
       adopt(data.record)
       await loadReport()
-      setMessage(t.published)
+      setMessage(nextShow ? t.draftSaved : t.published)
     } catch {
       setError(t.publishFailed)
     } finally {
@@ -356,6 +361,13 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
 
   return (
     <div className="editor">
+      {(nextShow || pastShow) && (
+        <p className="show-notice" role="status">
+          <strong>{initialRecord.showTitle || initialRecord.showTitleFa || t.untitledShow}</strong>
+          {' '}{nextShow ? t.nextShowNotice : t.pastShowNotice}
+          {' '}<Link to={`/staff/${initialRecord.slug}/shows`}>{nextShow ? t.nextShowLink : t.pastShowLink}</Link>
+        </p>
+      )}
       <section className="box staff-report" id="report" aria-labelledby="report-title">
         <div className="row between wrap gap">
           <ReportHeading id="report-title">{t.reportTitle}</ReportHeading>
@@ -364,7 +376,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
               loadRecord().catch(() => setError(t.publishFailed))
               void loadReport()
             }}>{t.refresh}</button>
-            {canExport && <a className="btn btn-quiet small-btn" href={`${LEADS_CSV_PATH}?gallery=${encodeURIComponent(initialRecord.slug)}`} download>{t.downloadCsv}</a>}
+            {canExport && <a className="btn btn-quiet small-btn" href={`${LEADS_CSV_PATH}?${staffShowQuery(initialRecord.slug, show?.id)}`} download>{t.downloadCsv}</a>}
           </div>
         </div>
         {reportFailed && <p className="error" role="alert">{t.reportFailed}</p>}
@@ -377,7 +389,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
               <div><dt>{t.leadsTotal}</dt><dd>{format.number(stats.leads.length)}</dd></div>
             </dl>
             {noVisits && <p className="muted">{t.noVisits}</p>}
-            {!reportOnly && <Link className="btn-text staff-report-link" to={`/staff/${initialRecord.slug}/report`}>{t.navReport}</Link>}
+            {!reportOnly && <Link className="btn-text staff-report-link" to={`/staff/${initialRecord.slug}/report${show && !show.isCurrent ? `?show=${show.id}` : ''}`}>{t.navReport}</Link>}
             {reportOnly && <><div className="staff-tables">
               <div className="staff-table">
                 <h2>{t.byWork}</h2>
@@ -567,10 +579,10 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
               ) : (
                 <p className={dirty ? 'publish-dirty small' : 'muted small'}>{dirty ? t.unsaved : t.allSaved}</p>
               )}
-              <p className="muted tiny">{t.publishNote}</p>
+              <p className="muted tiny">{nextShow ? t.draftNote : t.publishNote}</p>
             </div>
             <button className={`btn btn-primary${publishing ? ' is-loading' : ''}`} type="submit" disabled={publishing} aria-busy={publishing || undefined}>
-              {t.publish}
+              {nextShow ? t.saveDraft : t.publish}
             </button>
           </section>
         </form>

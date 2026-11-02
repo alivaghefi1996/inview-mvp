@@ -84,6 +84,20 @@ test('HAD-121 a report and its CSV count only the requested show', async () => {
   })
 })
 
+test('HAD-121 an archived report lists every day of the show, and a current report the last 30 days', async () => {
+  await withTwoShows(async ({ app, db, cookie, showA, showB }) => {
+    const old = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    await db.insert(visits).values([
+      { showId: showA, visitorId: VISITOR, kind: 'scan', day: '2026-01-01', createdAt: old },
+      { showId: showB, visitorId: VISITOR, kind: 'scan', day: '2026-01-01', createdAt: old },
+    ])
+    const archived = await request(app).get(`/api/v1/pilot/staff?gallery=o-gallery&show=${showA}`).set('Cookie', cookie)
+    assert.equal(archived.body.days.length, 1)
+    const current = await request(app).get('/api/v1/pilot/staff?gallery=o-gallery').set('Cookie', cookie)
+    assert.equal(current.body.days.length, 0)
+  })
+})
+
 test('HAD-121 a report refuses a show of another gallery and a malformed show id', async () => {
   await withTwoShows(async ({ app, db, cookie }) => {
     const [other] = await db.insert(galleries).values({ slug: 'other-gallery', nameEn: 'Other', nameFa: 'دیگر' }).returning()
