@@ -87,6 +87,24 @@ test('health, unknown API and method errors', async () => {
   })
 })
 
+test('HAD-73 the /api/pilot alias announces its removal date', async () => {
+  await withApp('sunset', async ({ app }) => {
+    const api = http(app, 'sunset')
+
+    const alias = await api.get('/api/pilot')
+    assert.equal(alias.status, 200)
+    assert.equal(alias.headers.deprecation, 'true')
+    assert.equal(alias.headers.sunset, 'Wed, 02 Dec 2026 00:00:00 GMT')
+    assert.equal(alias.headers.link, '</api/v1/pilot>; rel="successor-version"')
+    assert.equal(new Date(String(alias.headers.sunset)).toUTCString(), alias.headers.sunset)
+
+    const current = await api.get('/api/v1/pilot')
+    assert.equal(current.status, 200)
+    assert.equal(current.headers.deprecation, undefined)
+    assert.equal(current.headers.sunset, undefined)
+  })
+})
+
 test('HAD-24 public reads and visitor posts hide phone numbers', async () => {
   await withApp('privacy', async ({ app }) => {
     const api = http(app, 'privacy')
