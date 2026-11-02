@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../components/EmptyState'
 import { useSignIn } from '../../components/VisitorShell'
@@ -92,7 +92,11 @@ function OLanding({ record, preview = false, lang }: { record: PilotRecord, prev
       <div className="pad intro reveal">
         <ShowHeading className="show-title">{title || brand}</ShowHeading>
         <span className="ink-rule" aria-hidden />
-        <p className="page-context">{[copy.currentShow, dates, hours].filter(Boolean).join(' · ')}</p>
+        <p className="page-context">
+          {[copy.currentShow, dates, hours].filter(Boolean).map((part, index) => (
+            <Fragment key={part}>{index > 0 && ' · '}<span>{part}</span></Fragment>
+          ))}
+        </p>
         {empty && <p className="o-empty-body">{copy.emptyBody}</p>}
         <div className="o-actions">
           {preview ? (
