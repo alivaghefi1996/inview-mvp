@@ -20,6 +20,9 @@ for (const width of [390, 1440]) {
       const id = randomUUID().slice(0, 8)
       const email = `ops-${id}@example.com`
       const slug = `ops-${id}`
+      const publicPath = `/g/${slug}`
+      const nameFa = 'گالری آزمایشی'
+      const nameEn = 'Test gallery'
       const sql = postgres(process.env.DATABASE_URL!, { max: 1 })
       let invite: string
       try {
@@ -49,8 +52,8 @@ for (const width of [390, 1440]) {
       await accessible(page)
       await page.screenshot({ path: testInfo.outputPath('new-gallery.png') })
       await page.locator('[name="slug"]').fill(slug)
-      await page.locator('[name="nameFa"]').fill('گالری آزمایشی')
-      await page.locator('[name="nameEn"]').fill('Test gallery')
+      await page.locator('[name="nameFa"]').fill(nameFa)
+      await page.locator('[name="nameEn"]').fill(nameEn)
       await page.locator('[name="showTitle"]').fill('First show')
       await page.locator('[name="ownerIdentifier"]').fill(`owner-${id}@example.com`)
       await page.locator('.ops-form button').click()
@@ -79,6 +82,7 @@ for (const width of [390, 1440]) {
       await page.goto(`/ops/galleries/${slug}`)
       await accessible(page)
       await page.screenshot({ path: testInfo.outputPath('profile.png') })
+      expect((await page.request.get(publicPath)).status()).toBe(404)
       await page.locator('[name="notes"]').fill('Operator note')
       await page.locator('[name="status"]').selectOption('live')
       await page.locator('.ops-form button').click()
@@ -91,6 +95,9 @@ for (const width of [390, 1440]) {
       await expect(page.locator('.ops-once')).toHaveCount(0)
       const response = await page.request.post(`/ops/galleries/${slug}`, { headers: { Origin: 'https://invalid.example' }, form: { intent: 'rotate' } })
       expect(response.status()).toBe(403)
+      await expect.poll(async () => (await page.request.get(publicPath)).status(), { timeout: 15000 }).toBe(200)
+      await page.goto(publicPath)
+      await expect(page.getByRole('link', { name: lang === 'fa' ? nameFa : nameEn })).toBeVisible()
       const seed = postgres(process.env.DATABASE_URL!, { max: 1 })
       try {
         const [gallery] = await seed`select id from galleries where slug = ${slug}`
