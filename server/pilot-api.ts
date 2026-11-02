@@ -1,4 +1,5 @@
 import {
+  isPublicTenant,
   loadPublicRecord,
   publishGalleryRecord,
   readStaffReport,
@@ -36,7 +37,7 @@ export async function handlePilotApi(
   if (verb !== 'GET' && verb !== 'HEAD' && verb !== 'POST') {
     return { status: 405, body: { error: 'Method not allowed.' } }
   }
-  if (tenant.gallery.status !== 'live') return UNKNOWN_GALLERY
+  if (!isPublicTenant(tenant)) return UNKNOWN_GALLERY
   if (verb === 'GET' || verb === 'HEAD') {
     try {
       return { status: 200, body: await loadPublicRecord(db, tenant) }

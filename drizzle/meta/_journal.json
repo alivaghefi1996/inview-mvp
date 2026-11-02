@@ -57,6 +57,13 @@
       "when": 1762070000000,
       "tag": "0007_gallery_demo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1762080000000,
+      "tag": "0008_publish_live_shows",
+      "breakpoints": true
     }
   ]
 }

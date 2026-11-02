@@ -8,7 +8,8 @@ test('migration 0006 preserves old rows, adds safe defaults, tables and indexes 
   try {
     const directory = new URL('../drizzle/', import.meta.url)
     const files = readdirSync(directory).filter((name) => name.endsWith('.sql')).sort()
-    for (const file of files.filter((name) => !name.startsWith('0006_'))) {
+    // Only the earlier migrations. A later one can read a column that 0006 adds, so it cannot run first.
+    for (const file of files.filter((name) => name.slice(0, 4) < '0006')) {
       for (const statement of readFileSync(new URL(file, directory), 'utf8').split('--> statement-breakpoint').filter((part) => part.trim())) {
         await client.exec(statement)
       }
