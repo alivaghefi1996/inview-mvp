@@ -1,5 +1,13 @@
 /* Catalogue Wall tokens and components. See docs/design/direction.md */
 
+/* The document inlines this sheet, so the face rules belong here and not in root.tsx. */
+@import '@fontsource/fraunces/400.css';
+@import '@fontsource/fraunces/500.css';
+@import '@fontsource/sora/400.css';
+@import '@fontsource/sora/500.css';
+@import '@fontsource/sora/600.css';
+@import '@fontsource/sora/700.css';
+
 :root {
   --ink: #121714;
   --ink-soft: #2A2F2C;

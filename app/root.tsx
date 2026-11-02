@@ -16,16 +16,12 @@ import { metaCopy } from './lib/meta'
 import { dirFor, resolveLang } from './lib/lang'
 import { APP_MANIFEST_PATH, galleryManifestPath } from './lib/manifest'
 import { ServiceWorker } from './components/ServiceWorker'
-import '@fontsource/fraunces/400.css'
-import '@fontsource/fraunces/500.css'
-import '@fontsource/sora/400.css'
-import '@fontsource/sora/500.css'
-import '@fontsource/sora/600.css'
-import '@fontsource/sora/700.css'
 import fraunces400 from '@fontsource/fraunces/files/fraunces-latin-400-normal.woff2?url'
 import fraunces500 from '@fontsource/fraunces/files/fraunces-latin-500-normal.woff2?url'
-import persianFonts from './styles-fa.css?url'
-import './styles.css'
+// A stylesheet link adds a round trip before the first paint, and on a mobile connection it
+// shares the bandwidth with every module script. Both sheets fit inside the document instead.
+import persianFontFaces from './styles-fa.css?inline'
+import appStyles from './styles.css?inline'
 
 export type SerifHandle = { usesMediumSerif?: (data: unknown) => boolean }
 
@@ -61,9 +57,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="theme-color" content="#17332E" />
         <Meta />
         <Links />
+        <style dangerouslySetInnerHTML={{ __html: appStyles }} />
         <link rel="manifest" href={data?.manifest ?? APP_MANIFEST_PATH} />
         {persian ? (
-          <link rel="stylesheet" href={persianFonts} />
+          <style dangerouslySetInnerHTML={{ __html: persianFontFaces }} />
         ) : (
           <>
             <link rel="preload" href={fraunces400} as="font" type="font/woff2" crossOrigin="anonymous" />
