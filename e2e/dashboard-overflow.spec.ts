@@ -17,8 +17,7 @@ for (const path of paths) {
     await page.goto(path, { waitUntil: 'load' })
     await page.evaluate(() => document.fonts.ready)
 
-    // A wide table inside .scroll-x scrolls on its own and leaves the document alone,
-    // so the document is the only element that must fit the viewport.
+    // A wide table inside .scroll-x scrolls on its own, so only the document must fit.
     const size = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
