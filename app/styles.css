@@ -2009,6 +2009,8 @@ td {
 
 .staff { min-height: 100dvh; background: var(--paper); }
 .staff-fa { font-family: var(--fa), var(--sans); }
+.staff-fa .col-label { white-space: normal; }
+.staff-fa .small-btn { white-space: nowrap; }
 .staff-fa .brand, .staff-fa .dash-head h1, .staff-fa .gate-card h1 { font-family: var(--fa); font-weight: 700; letter-spacing: 0; }
 .staff-bar {
   position: sticky;
