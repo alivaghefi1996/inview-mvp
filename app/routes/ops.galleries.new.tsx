@@ -16,7 +16,7 @@ export async function action({ request }: { request: Request }) {
   const form = await request.formData()
   try {
     const result = await createGallery(database(), principal, { slug: field(form, 'slug'), nameFa: field(form, 'nameFa'), nameEn: field(form, 'nameEn'), showTitle: field(form, 'showTitle'), ownerIdentifier: field(form, 'ownerIdentifier') })
-    return { error: false, invitePath: result.invitePath, slug: result.gallery.slug }
+    return { error: false, message: null, invitePath: result.invitePath, slug: result.gallery.slug }
   } catch (error) { return actionFailure(error) }
 }
 
@@ -31,7 +31,9 @@ export default function NewGallery() {
         <label>{t.nameEn}<input name="nameEn" required maxLength={80} dir="ltr" /></label>
         <label>{t.showTitle}<input name="showTitle" required maxLength={160} /></label>
         <label>{t.ownerIdentifier}<input name="ownerIdentifier" required maxLength={320} dir="ltr" autoComplete="off" /></label>
-        {result?.error && <p className="error" role="alert">{t.invalidFields}</p>}
+        {result?.error && (result.message
+          ? <p className="error" role="alert" lang="en" dir="ltr">{result.message}</p>
+          : <p className="error" role="alert">{t.invalidFields}</p>)}
         <OpsSubmit>{t.newGallery}</OpsSubmit>
       </Form>}
   </>

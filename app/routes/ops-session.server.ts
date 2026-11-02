@@ -30,7 +30,7 @@ export function requireOrigin(request: Request) {
 
 export function actionFailure(error: unknown) {
   if (error instanceof PermissionError) throw new Response('Forbidden', { status: 403, headers: privateHeaders() })
-  if (error instanceof AccountInputError) return data({ error: true, invitePath: null, code: null, slug: null, saved: false }, { status: 400, headers: privateHeaders() })
+  if (error instanceof AccountInputError) return data({ error: true, message: error.message, invitePath: null, code: null, slug: null, saved: false }, { status: 400, headers: privateHeaders() })
   throw new Response('The request failed.', { status: 500, headers: privateHeaders() })
 }
 
