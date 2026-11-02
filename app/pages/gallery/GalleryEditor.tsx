@@ -1,4 +1,5 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState, type CSSProperties } from 'react'
+import { Link } from 'react-router'
 import { OLandingPreview } from '../visitor/OGalleryPages'
 import { parseToman } from '../../lib/price'
 import { type PilotRecord, type PilotWork } from '../../lib/pilot'
@@ -245,6 +246,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
     () => new Set(Object.entries(prices).filter(([, raw]) => parseToman(raw) === 'invalid').map(([id]) => id)),
     [prices],
   )
+  const savedWorkIds = useMemo(() => new Set((JSON.parse(published) as PilotRecord).works.map((work) => work.id)), [published])
   const backwards = !!draft.startsOn && !!draft.endsOn && draft.endsOn < draft.startsOn
   const dirty = JSON.stringify(draft) !== published || badPrices.size > 0
 
@@ -346,6 +348,9 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
 
   const noVisits = !!stats && stats.visits.scans === 0 && stats.visits.views === 0
   const ReportHeading = reportOnly ? 'h1' : 'h2'
+  const maxWorkViews = Math.max(1, ...(stats?.works ?? []).map((row) => row.views))
+  const maxDayViews = Math.max(1, ...(stats?.days ?? []).map((row) => row.views))
+  const dataBar = (value: number, max: number) => ({ '--bar': `${(value / max) * 100}%` }) as CSSProperties
   const titleOf = (workId: string | null, fallback: string | null) =>
     fallback || (workId ? draft.works.find((work) => work.id === workId)?.title || workId : t.noWork)
 
@@ -372,22 +377,10 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
               <div><dt>{t.leadsTotal}</dt><dd>{format.number(stats.leads.length)}</dd></div>
             </dl>
             {noVisits && <p className="muted">{t.noVisits}</p>}
-            <div className="staff-tables">
-              {stats.days.length > 0 && (
-                <div className="staff-table">
-                  <h3>{t.byDay}</h3>
-                  <table>
-                    <thead><tr><th scope="col">{t.day}</th><th scope="col" className="num">{t.scans}</th><th scope="col" className="num">{t.views}</th></tr></thead>
-                    <tbody>
-                      {stats.days.map((row) => (
-                        <tr key={row.day}><td>{format.day(row.day)}</td><td className="num">{format.number(row.scans)}</td><td className="num">{format.number(row.views)}</td></tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            {!reportOnly && <Link className="btn-text staff-report-link" to={`/staff/${initialRecord.slug}/report`}>{t.navReport}</Link>}
+            {reportOnly && <><div className="staff-tables">
               <div className="staff-table">
-                <h3>{t.byWork}</h3>
+                <h2>{t.byWork}</h2>
                 {stats.works.length === 0 ? (
                   <p className="muted small">{t.noWorkStats}</p>
                 ) : (
@@ -395,14 +388,27 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
                     <thead><tr><th scope="col">{t.work}</th><th scope="col" className="num">{t.views}</th><th scope="col" className="num">{t.saves}</th><th scope="col" className="num">{t.asks}</th></tr></thead>
                     <tbody>
                       {stats.works.map((row) => (
-                        <tr key={row.workId}><td>{row.title}</td><td className="num">{format.number(row.views)}</td><td className="num">{format.number(row.saves)}</td><td className="num">{format.number(row.asks)}</td></tr>
+                        <tr key={row.workId}><td>{row.title}</td><td className="num data-bar" style={dataBar(row.views, maxWorkViews)}>{format.number(row.views)}</td><td className="num">{format.number(row.saves)}</td><td className="num">{format.number(row.asks)}</td></tr>
                       ))}
                     </tbody>
                   </table>
                 )}
               </div>
+              {stats.days.length > 0 && (
+                <div className="staff-table">
+                  <h2>{t.byDay}</h2>
+                  <table>
+                    <thead><tr><th scope="col">{t.day}</th><th scope="col" className="num">{t.scans}</th><th scope="col" className="num">{t.views}</th></tr></thead>
+                    <tbody>
+                      {stats.days.map((row) => (
+                        <tr key={row.day}><td>{format.day(row.day)}</td><td className="num">{format.number(row.scans)}</td><td className="num data-bar" style={dataBar(row.views, maxDayViews)}>{format.number(row.views)}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-            <h3>{t.leadsTitle}</h3>
+            <h2>{t.leadsTitle}</h2>
             <p className="muted small">{t.leadsNote} {t.leadsTimeNote}</p>
             {stats.leads.length > 0 ? (
               <ul className="lead-list">
@@ -423,6 +429,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
             ) : (
               <p className="muted small">{t.noLeads}</p>
             )}
+            </>}
           </>
         )}
         <label htmlFor="qr" className="staff-qr-label">{t.qrAddress}</label>
@@ -487,11 +494,15 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
               const priceId = `price-${work.id}`
               const badPrice = badPrices.has(work.id)
               return (
-                <fieldset key={work.id} className="work-edit">
-                  <legend>
+                <details key={work.id} className="work-edit" open={!savedWorkIds.has(work.id)}>
+                  <summary>
                     <span className="work-index">{format.number(index + 1)}</span>
-                    {work.title || t.workFallback}
-                  </legend>
+                    {work.image ? <img className="work-edit-thumb" src={work.image} alt="" loading="lazy" decoding="async" /> : <span className="work-edit-thumb" />}
+                    <span className="work-edit-name">{work.title || t.workFallback}</span>
+                    <span className="muted small">{t[work.status]}</span>
+                  </summary>
+                  <fieldset>
+                  <legend className="sr-only">{work.title || t.workFallback}</legend>
                   <div className="work-edit-body">
                     <ImageField
                       gallery={initialRecord.slug}
@@ -540,7 +551,8 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
                     </div>
                   </div>
                   <button className="btn-text" type="button" onClick={() => removeWork(work.id)}>{t.removeWork}</button>
-                </fieldset>
+                  </fieldset>
+                </details>
               )
             })}
           </section>
@@ -563,7 +575,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
           </section>
         </form>
 
-        <aside className="editor-preview-col box" aria-labelledby="gallery-preview-title">
+        <aside className="editor-preview-col" aria-labelledby="gallery-preview-title">
           <div className="row between wrap gap">
             <h2 id="gallery-preview-title">{t.preview}</h2>
             <div className="lang" role="group" aria-label={t.previewLanguage}>
