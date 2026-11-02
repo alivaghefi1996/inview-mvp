@@ -169,76 +169,77 @@ for (const width of [390, 1440]) {
       } finally { await supportContext.close() }
     })
   }
+}
 
-  for (const lang of ['fa', 'en'] as const) {
-    test(`operator re-enable and gallery error at ${width} in ${lang}`, async ({ page, baseURL, browser }, testInfo) => {
-      test.setTimeout(180000)
-      const origin = baseURL || 'http://127.0.0.1:3000'
-      const id = randomUUID().slice(0, 8)
-      const email = `ops-${id}@example.com`
-      const slug = `re-${id}`
-      const sql = postgres(process.env.DATABASE_URL!, { max: 1 })
-      let invite: string
-      try {
-        invite = await createOperatorInvite(sql, { email, name: 'Re-enable test operator', role: 'admin', publicAppUrl: origin })
-      } finally { await sql.end() }
-      await page.setViewportSize({ width, height: 900 })
-      await page.context().addCookies([{ name: 'inview-lang', value: lang, url: origin }])
-      await page.goto('/ops')
-      await expect(page).toHaveURL(/\/ops\/sign-in$/)
-      await page.goto(invite)
-      await page.locator('input[name="name"]').fill('Re-enable test operator')
-      await page.locator('input[name="password"]').fill('operator-password')
-      await page.locator('form button[type="submit"], form button:not([type])').click()
-      await expect(page).toHaveURL(/\/ops$/)
-      await page.goto('/ops/operators')
-      const supportEmail = `support-re-${id}@example.com`
-      await page.locator('[name="identifier"]').fill(supportEmail)
-      await page.locator('.ops-form [name="role"]').selectOption('support')
-      await page.locator('button[value="invite"]').click()
-      await expect(page.locator('.ops-once textarea')).toBeVisible()
-      const supportInvite = await page.locator('.ops-once textarea').inputValue()
+for (const lang of ['fa', 'en'] as const) {
+  test(`operator re-enable and gallery error in ${lang}`, async ({ page, baseURL, browser }) => {
+    test.setTimeout(180000)
+    const origin = baseURL || 'http://127.0.0.1:3000'
+    const id = randomUUID().slice(0, 8)
+    const email = `ops-${id}@example.com`
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1 })
+    let invite: string
+    try {
+      invite = await createOperatorInvite(sql, { email, name: 'Re-enable test operator', role: 'admin', publicAppUrl: origin })
+    } finally { await sql.end() }
+    await page.setViewportSize({ width: 390, height: 900 })
+    await page.context().addCookies([{ name: 'inview-lang', value: lang, url: origin }])
+    await page.goto('/ops')
+    await expect(page).toHaveURL(/\/ops\/sign-in$/)
+    await page.goto(invite)
+    await page.locator('input[name="name"]').fill('Re-enable test operator')
+    await page.locator('input[name="password"]').fill('operator-password')
+    await page.locator('form button[type="submit"], form button:not([type])').click()
+    await expect(page).toHaveURL(/\/ops$/)
+    await page.goto('/ops/operators')
+    const supportEmail = `support-re-${id}@example.com`
+    const supportName = `Re-enable support ${id}`
+    await page.locator('[name="identifier"]').fill(supportEmail)
+    await page.locator('.ops-form [name="role"]').selectOption('support')
+    await page.locator('button[value="invite"]').click()
+    await expect(page.locator('.ops-once textarea')).toBeVisible()
+    const supportInvite = await page.locator('.ops-once textarea').inputValue()
+    await page.reload()
+    const supportContext = await browser.newContext({ baseURL: origin })
+    try {
+      const supportPage = await supportContext.newPage()
+      await supportPage.goto(supportInvite)
+      await supportPage.locator('[name="name"]').fill(supportName)
+      await supportPage.locator('[name="password"]').fill('support-password')
+      await supportPage.locator('form > button').click()
+      await expect(supportPage).toHaveURL(/\/ops$/)
       await page.reload()
-      const supportContext = await browser.newContext({ baseURL: origin })
+      const member = page.locator('.ops-member', { hasText: supportName })
+      const userId = await member.locator('input[name="userId"]').inputValue()
+      await expect(member).toContainText(lang === 'fa' ? 'فعال' : 'Active')
+      await member.locator('button[value="disable"]').click()
+      await expect(page.locator('[role="status"]')).toHaveText(lang === 'fa' ? 'ذخیره شد.' : 'Saved.')
+      await expect(member).toContainText(lang === 'fa' ? 'غیرفعال' : 'Disabled')
+      await member.locator('button[value="enable"]').click()
+      await expect(page.locator('[role="status"]')).toHaveText(lang === 'fa' ? 'ذخیره شد.' : 'Saved.')
+      await expect(member.locator('button[value="disable"]')).toBeVisible()
+      const check = postgres(process.env.DATABASE_URL!, { max: 1 })
       try {
-        const supportPage = await supportContext.newPage()
-        await supportPage.goto(supportInvite)
-        await supportPage.locator('[name="name"]').fill('Re-enable support')
-        await supportPage.locator('[name="password"]').fill('support-password')
-        await supportPage.locator('form > button').click()
-        await expect(supportPage).toHaveURL(/\/ops$/)
-        await page.reload()
-        await expect(page.getByText('disabled')).toBeVisible()
-        await page.locator('button[value="disable"]').click()
-        await expect(page.getByText('Saved.')).toBeVisible()
-        await page.reload()
-        await expect(page.getByText('disabled')).toBeVisible()
-        await page.locator('button[value="enable"]').click()
-        await expect(page.getByText('Saved.')).toBeVisible()
-        await page.reload()
-        const check = postgres(process.env.DATABASE_URL!, { max: 1 })
-        try {
-          const row = await check`select summary from audit_logs a where a.action = 'operator-enable' order by a.id desc limit 1`
-          expect(row.length).toBe(1)
-          expect(row[0].summary.status).toEqual('active')
-        } finally { await check.end() }
-        await page.goto('/ops/galleries/new')
-        const slugInput = page.locator('[name="slug"]')
-        await slugInput.fill('a')
-        await page.locator('[name="nameFa"]').fill('آ')
-        await page.locator('[name="nameEn"]').fill('A')
-        await page.locator('[name="showTitle"]').fill('Show')
-        await page.locator('[name="ownerIdentifier"]').fill(`owner-re-${id}@example.com`)
-        await page.locator('.ops-form button').click()
-        const errorEl = page.locator('.error[role="alert"]')
-        await expect(errorEl).toBeVisible()
-        const errorText = await errorEl.textContent()
-        expect(errorText).toContain(lang === 'fa' ? 'نشانی' : 'slug')
-        const langAttr = await errorEl.getAttribute('lang')
-        expect(langAttr).toBe(lang)
-        const dirAttr = await errorEl.getAttribute('dir')
-        expect(dirAttr).toBe(lang === 'fa' ? 'rtl' : 'ltr')
-      } finally { await supportContext.close() }
-    })
-  }
+        const rows = await check`select summary from audit_logs where action = 'operator-enable' and target_id = ${userId}`
+        expect(rows).toHaveLength(1)
+        expect(rows[0].summary).toEqual({ before: { role: 'support', status: 'disabled' }, after: { role: 'support', status: 'active' } })
+      } finally { await check.end() }
+      await supportPage.goto('/ops/sign-in')
+      await supportPage.locator('[name="identifier"]').fill(supportEmail)
+      await supportPage.locator('[name="password"]').fill('support-password')
+      await supportPage.locator('form > button').click()
+      await expect(supportPage).toHaveURL(/\/ops$/)
+      await page.goto('/ops/galleries/new')
+      await page.locator('[name="slug"]').fill('invite')
+      await page.locator('[name="nameFa"]').fill('گالری')
+      await page.locator('[name="nameEn"]').fill('Gallery')
+      await page.locator('[name="showTitle"]').fill('Show')
+      await page.locator('[name="ownerIdentifier"]').fill(`owner-re-${id}@example.com`)
+      await page.locator('.ops-form button').click()
+      const error = page.locator('.error[role="alert"]')
+      await expect(error).toHaveText(lang === 'fa' ? 'این نشانی با صفحه کارکنان تداخل دارد. نشانی دیگری انتخاب کنید.' : 'This slug matches a staff page. Select a different slug.')
+      await expect(error).toHaveAttribute('lang', lang)
+      await expect(error).toHaveAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr')
+    } finally { await supportContext.close() }
+  })
 }
