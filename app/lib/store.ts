@@ -74,7 +74,7 @@ export const visitor = {
   reset: () => set({ ...empty }),
 }
 
-// Iranian mobile numbers: 09xxxxxxxxx (also accepts Persian digits and +98)
+// Mobile numbers: 09xxxxxxxxx (also accepts Persian digits and +98)
 export function normalizePhone(input: string): string | null {
   const latin = input.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[\s-]/g, '')
   const local = latin.startsWith('+98') ? '0' + latin.slice(3) : latin.startsWith('98') ? '0' + latin.slice(2) : latin

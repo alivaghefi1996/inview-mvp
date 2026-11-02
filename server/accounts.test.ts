@@ -8,7 +8,7 @@ import { sha256 } from './crypto'
 import { rateLimitConfig } from './rate-limit'
 import { createTestDb } from './test-db'
 
-test('phone normalization covers Persian and Arabic digits and Iranian prefixes', async () => {
+test('phone normalization covers Persian and Arabic digits and the +98 prefix', async () => {
   for (const phone of ['۰۹۱۲۳۴۵۶۷۸۹', '٠٩١٢٣٤٥٦٧٨٩', '+۹۸۹۱۲۳۴۵۶۷۸۹', '۰۰۹۸۹۱۲۳۴۵۶۷۸۹', ' 09123456789 ']) {
     assert.equal(normalizePhone(phone), '09123456789')
   }

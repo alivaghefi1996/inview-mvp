@@ -4,7 +4,7 @@ import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createRoutesStub, Outlet } from 'react-router'
 import './test-render.ts'
-import Home, { loader, meta } from '../app/routes/home.tsx'
+import Home, { meta } from '../app/routes/home.tsx'
 import { defaultLang, dirFor, resolveLang } from '../app/lib/lang.ts'
 import { gallery } from '../app/data/gallery.ts'
 import InviewLanding, { landingCopy } from '../app/pages/site/InviewLanding.tsx'
@@ -12,8 +12,6 @@ import { landingContact } from '../app/lib/landing-contact.ts'
 
 function renderHome(url: string, cookie?: string, contact?: typeof landingContact) {
   const request = new Request(url, { headers: cookie ? { cookie } : {} })
-  const data = loader({ request })
-  assert.ok(!(data instanceof Response))
   const lang = resolveLang(new URL(url).pathname, request.headers.get('cookie'))
   const Stub = createRoutesStub([{
     id: 'root',
@@ -23,14 +21,13 @@ function renderHome(url: string, cookie?: string, contact?: typeof landingContac
   }])
   const html = renderToString(createElement(Stub, {
     initialEntries: ['/'],
-    hydrationData: { loaderData: { root: { lang, dir: dirFor(lang) }, home: data } },
+    hydrationData: { loaderData: { root: { lang, dir: dirFor(lang) }, home: null } },
   }))
-  return { html, data }
+  return { html }
 }
 
 test('root server-renders the Inview landing in Persian without a redirect', () => {
-  const { html, data } = renderHome('https://inview.test/')
-  assert.equal(data.isGallerySite, false)
+  const { html } = renderHome('https://inview.test/')
   assert.match(html, /<html lang="fa" dir="rtl"/)
   assert.ok(html.includes(landingCopy.fa.hero))
   assert.match(html, /href="\/g\/sample"/)
@@ -99,18 +96,9 @@ test('header and footer offer full language labels and the hero shows work detai
   assert.match(html, /class="landing-phone"><picture><source srcSet="\/landing\/work.webp"/)
 })
 
-test('the gallery subdomain keeps its gallery website', () => {
-  const { html, data } = renderHome(`https://${gallery.subdomain}.inview.ir/`)
-  assert.equal(data.isGallerySite, true)
-  assert.match(html, /class="site"/)
-  assert.doesNotMatch(html, /class="landing/)
-  assert.equal(loader({ request: new Request('https://other.inview.ir/') }).isGallerySite, false)
-})
-
 test('landing metadata uses the root public origin and language', () => {
   for (const lang of ['fa', 'en'] as const) {
     const tags = meta({
-      data: { isGallerySite: false },
       matches: [{ id: 'root', data: { lang, origin: 'https://inview.example' } }],
     } as Parameters<typeof meta>[0])
     assert.ok(tags.some((tag) => 'rel' in tag && tag.rel === 'canonical' && tag.href === 'https://inview.example/'))
