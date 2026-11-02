@@ -17,6 +17,9 @@
   --pine-tint: #E4EDE9;
   --ochre: #A85A32;
   --ochre-tint: #F3E4D8;
+  /* --ochre as text is 4.05:1 on --ochre-tint and 4.43:1 on --paper, under AA 4.5:1.
+     Ochre text uses --ochre-ink; --ochre stays the accent, the fill and the focus ring. */
+  --ochre-ink: #7A4528;
   --good: #1B6B45;
   --warn: #A35731;
   --sold: #8B2E22;
@@ -207,7 +210,7 @@ button { font: inherit; color: inherit; cursor: pointer; background: none; }
   text-underline-offset: 3px;
   color: var(--ink);
 }
-.btn-text:hover:not(:disabled) { color: var(--ochre); }
+.btn-text:hover:not(:disabled) { color: var(--pine); }
 .btn-text.inline {
   display: inline-flex;
   align-items: center;
@@ -526,7 +529,7 @@ button { font: inherit; color: inherit; cursor: pointer; background: none; }
   color: var(--ink);
 }
 .mark.pine { background: var(--pine-tint); color: var(--pine); }
-.mark.copper { background: var(--ochre-tint); color: var(--ochre); }
+.mark.copper { background: var(--ochre-tint); color: var(--ochre-ink); }
 .welcome .btn.wide { margin-top: var(--space-1); }
 
 .o-landing { padding-top: var(--space-2); }

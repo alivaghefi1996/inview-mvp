@@ -33,8 +33,13 @@ Warm paper field, deep ink, one ochre accent. Dominant colors stay dark and quie
 | `--muted` | `#5A564E` | Secondary text (AA on paper) |
 | `--pine` | `#17332E` | Primary action |
 | `--pine-hover` | `#0F2420` | Pressed / hover |
-| `--ochre` | `#A85A32` | Accent, focus |
+| `--ochre` | `#A85A32` | Accent, focus, fills and rules |
+| `--ochre-ink` | `#7A4528` | Ochre text (6.82 on `--paper`, 6.24 on `--ochre-tint`) |
 | `--good` / `--warn` / `--sold` | green / ochre / red-brown | Status only |
+
+`--ochre` is a non-text accent. As text it reaches only 4.05:1 on `--ochre-tint` and 4.43:1 on
+`--paper`, below AA 4.5:1, so ochre text uses `--ochre-ink`. An ochre *icon* can keep `--ochre`,
+because WCAG 1.4.11 asks for 3:1.
 
 Spacing grid: **4 / 8 / 12 / 16 / 24 / 32 / 48 / 64**. Radius: **2** (hair), **6** (control), **10** (panel). No card+shadow stacks.
 
