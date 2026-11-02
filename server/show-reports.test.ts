@@ -112,6 +112,7 @@ test('HAD-121 a code printed for the old show stays listed and counts a scan on 
     assert.equal(row.showId, showB)
     assert.equal(row.qrCodeId, printed.id)
 
+    assert.equal((await staffQrCodes(db, tenant))[0].scans, 1)
     const [listed] = await galleryQrCodes(db, { kind: 'operator', userId: 'operator', platformRole: 'admin' }, galleryId)
     assert.equal(listed.scans, 1)
   })

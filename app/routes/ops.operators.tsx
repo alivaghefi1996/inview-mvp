@@ -27,8 +27,12 @@ export async function action({ request }: { request: Request }) {
     const form = await request.formData()
     const intent = field(form, 'intent')
     if (intent === 'invite') return { error: false, saved: false, ...await inviteOperator(database(), principal, field(form, 'identifier'), field(form, 'role') as PlatformRole) }
-    if (!['role', 'disable'].includes(intent)) throw new AccountInputError('Invalid action.')
-    await updateOperator(database(), principal, field(form, 'userId'), intent === 'role' ? { role: field(form, 'role') as PlatformRole } : { disable: true })
+    if (!['role', 'disable', 'enable'].includes(intent)) throw new AccountInputError('Invalid action.')
+    const userId = field(form, 'userId')
+    const userRole = field(form, 'role')
+    if (intent === 'role') await updateOperator(database(), principal, userId, { role: userRole as PlatformRole })
+    else if (intent === 'disable') await updateOperator(database(), principal, userId, { disable: true })
+    else await updateOperator(database(), principal, userId, { enable: true })
     return { error: false, saved: true, invitePath: null }
   } catch (error) { return actionFailure(error) }
 }
@@ -52,8 +56,12 @@ export default function Operators() {
     <div className="ops-team">{operators.map((operator) => <section key={operator.id} className="ops-member">
       <h2>{operator.name || t.invited}</h2><p>{operator.role ? t[operator.role] : ''} · {t[operator.status]}</p>
       <p>{t.lastSignIn}: {operator.lastSignedInAt ? format.dateTime(String(operator.lastSignedInAt)) : t.never}</p>
-      {operator.id !== self && <Form method="post"><input type="hidden" name="userId" value={operator.id} /><OperatorRole value={operator.role || 'support'} />
-        <div className="ops-actions"><OpsSubmit name="intent" value="role">{t.changeRole}</OpsSubmit><OpsSubmit name="intent" value="disable">{t.disable}</OpsSubmit></div>
+      {operator.id !== self && <Form method="post"><input type="hidden" name="userId" value={operator.id} />
+        {operator.status === 'disabled'
+          ? <div className="ops-actions"><OpsSubmit name="intent" value="enable">{t.enable}</OpsSubmit></div>
+          : <><OperatorRole value={operator.role || 'support'} />
+            <div className="ops-actions"><OpsSubmit name="intent" value="role">{t.changeRole}</OpsSubmit><OpsSubmit name="intent" value="disable">{t.disable}</OpsSubmit></div>
+          </>}
       </Form>}
     </section>)}</div>
   </>
