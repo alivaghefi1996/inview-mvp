@@ -1,6 +1,8 @@
 // The server accepts only this version. Change it when the sentences change.
 export const CONSENT_TEXT_VERSION = '2026-11-01'
 
+export const INQUIRY_CONSENT_VERSION = '2026-11-02'
+
 export const consentText = {
   en: {
     privacy:

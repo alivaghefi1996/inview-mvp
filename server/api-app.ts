@@ -13,6 +13,7 @@ import { auditActor, staffCsv, staffReport } from './staff'
 import { writeAudit } from './audit'
 import { acceptInvite, InvalidInviteError, readInvite } from './invitations'
 import { originCheck } from './origin-check'
+import { deliverInBackground, submitInquiry } from './inquiries'
 
 // Drizzle handle: Postgres.js in production, PGlite in tests.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -303,6 +304,18 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
       }
       console.error(error)
       sendJson(res, 400, UPLOAD_FAILED)
+    }
+  })
+
+  app.post('/api/v1/inquiries', async (req, res) => {
+    try {
+      const result = await submitInquiry(db, req.body, clientKey(req))
+      res.setHeader('Cache-Control', 'no-store')
+      writeApiResult(res, result)
+      if (result.status === 201) void deliverInBackground(db)
+    } catch (error) {
+      console.error(error instanceof Error ? error.name : 'inquiry failed')
+      sendJson(res, 500, SERVER_ERROR)
     }
   })
 

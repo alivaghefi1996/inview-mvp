@@ -32,6 +32,7 @@ export default [
     route('galleries/:slug/leads.csv', 'routes/ops.galleries.leads-csv.tsx'),
     route('galleries/:slug/activity', 'routes/ops.galleries.activity.tsx'),
     route('operators', 'routes/ops.operators.tsx'),
+    route('inquiries', 'routes/ops.inquiries.tsx'),
     route('audit', 'routes/ops.audit.tsx'),
     route('health', 'routes/ops.health.tsx'),
   ]),

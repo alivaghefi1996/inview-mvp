@@ -11,6 +11,7 @@ import { metricsText, recordStatus } from './metrics'
 import { contentSecurityPolicy } from './csp'
 import { pingDatabase, sendReady } from './ready'
 import { originCheck } from './origin-check'
+import { startInquiryRetry } from './inquiries'
 import { createObjectStorage, localMediaMiddleware } from './storage'
 
 declare module 'react-router' {
@@ -28,14 +29,17 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
 const db = createDatabase(databaseUrl)
 const storage = createObjectStorage()
+const stopInquiryRetry = startInquiryRetry(db)
 let draining = false
 
 export function beginDrain() {
   draining = true
+  stopInquiryRetry()
 }
 
 export async function closeServer() {
   draining = true
+  stopInquiryRetry()
   await closeDatabase()
 }
 

@@ -234,6 +234,15 @@
       "screenshot": false
     },
     {
+      "id": "ops-inquiries",
+      "group": "operator",
+      "label": "Gallery inquiries",
+      "labelFa": "پیام گالری‌ها",
+      "path": "/ops/inquiries",
+      "access": "operator",
+      "screenshot": false
+    },
+    {
       "id": "ops-audit",
       "group": "operator",
       "label": "Audit log",

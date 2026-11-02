@@ -71,7 +71,7 @@ for (const width of [390, 1440]) {
         await ownerPage.locator('[name="password"]').fill('owner-password')
         await ownerPage.locator('form > button').click()
         await expect(ownerPage).toHaveURL(new RegExp(`/staff/${slug}$`))
-        for (const path of ['/ops', '/ops/galleries/new', `/ops/galleries/${slug}`, `/ops/galleries/${slug}/team`, `/ops/galleries/${slug}/qr`, `/ops/galleries/${slug}/leads`, `/ops/galleries/${slug}/leads.csv`, `/ops/galleries/${slug}/activity`, '/ops/operators', '/ops/audit', '/ops/health']) {
+        for (const path of ['/ops', '/ops/galleries/new', `/ops/galleries/${slug}`, `/ops/galleries/${slug}/team`, `/ops/galleries/${slug}/qr`, `/ops/galleries/${slug}/leads`, `/ops/galleries/${slug}/leads.csv`, `/ops/galleries/${slug}/activity`, '/ops/operators', '/ops/inquiries', '/ops/audit', '/ops/health']) {
           expect((await ownerPage.request.get(path)).status()).toBe(403)
         }
       } finally { await staffContext.close() }
@@ -105,8 +105,9 @@ for (const width of [390, 1440]) {
         await seed`insert into leads(gallery_id, work_id, phone, kind, consent_at, consent_text_version) values (${gallery.id}, ${`work-${id}`}, '09121234534', 'ask', now(), 'v1')`
         const [other] = await seed`insert into galleries(slug, name_en, name_fa) values (${`other-${id}`}, 'Other gallery', 'گالری دیگر') returning id`
         await seed`insert into leads(gallery_id, phone, kind, consent_at, consent_text_version) values (${other.id}, '09129999999', 'ask', now(), 'v1')`
+        await seed`insert into inquiries(gallery_name, contact_person, contact, message, lang, consent_at, consent_text_version) values (${`Inquiry ${id}`}, 'Contact', '09121234567', 'Hello', ${lang}, now(), 'v1')`
       } finally { await seed.end() }
-      for (const path of [`/ops/galleries/${slug}/qr`, `/ops/galleries/${slug}/leads`, `/ops/galleries/${slug}/activity`, '/ops/operators', '/ops/audit', '/ops/health']) {
+      for (const path of [`/ops/galleries/${slug}/qr`, `/ops/galleries/${slug}/leads`, `/ops/galleries/${slug}/activity`, '/ops/operators', '/ops/inquiries', '/ops/audit', '/ops/health']) {
         await page.goto(path)
         await accessible(page)
         expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
