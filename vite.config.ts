@@ -2,6 +2,7 @@ import { reactRouter } from '@react-router/dev/vite'
 import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { VitePWA } from 'vite-plugin-pwa'
+import { APP_MANIFEST } from './app/lib/manifest'
 
 export default defineConfig(({ isSsrBuild }) => ({
   build: {
@@ -22,29 +23,8 @@ export default defineConfig(({ isSsrBuild }) => ({
         registerType: 'autoUpdate',
         includeAssets: ['icons/favicon.svg', 'icons/apple-touch-icon.png', 'offline.html'],
         injectRegister: false,
-        manifest: {
-          id: '/g/o-gallery',
-          name: 'Inview',
-          short_name: 'Inview',
-          lang: 'fa',
-          dir: 'rtl',
-          description: 'The show, the works and the prices, in your pocket.',
-          theme_color: '#203F3B',
-          background_color: '#E7E3D9',
-          display: 'standalone',
-          start_url: '/g/o-gallery',
-          scope: '/',
-          icons: [
-            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-            { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-            {
-              src: '/icons/icon-maskable-512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-        },
+        // A page outside a gallery starts at the landing page. `/g/:slug` serves its own manifest.
+        manifest: { ...APP_MANIFEST, id: '/', start_url: '/' },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
           globIgnores: ['artworks/**', '**/*latin-ext*', '**/*cyrillic*', '**/*vietnamese*'],

@@ -115,6 +115,11 @@ export function isDemoGallery(gallery: Pick<GalleryTenant['gallery'], 'isDemo'>)
   return gallery.isDemo
 }
 
+/** `tenantBySlug` and `tenantById` return a draft show too, because staff edit it. Public paths need this check. */
+export function isPublicTenant(tenant: GalleryTenant | null | undefined): tenant is GalleryTenant {
+  return !!tenant && tenant.gallery.status === 'live' && tenant.show.status === 'published'
+}
+
 export const GALLERY_NOT_FOUND = { status: 404, body: { error: 'That gallery was not found.', errorFa: 'گالری پیدا نشد.' } }
 
 export function galleryNotFound(): Response {
@@ -404,8 +409,8 @@ async function publicTenantBySlug(db: Db, slug: string): Promise<GalleryTenant |
     .select({ gallery: galleries, show: shows })
     .from(galleries)
     .innerJoin(shows, eq(shows.galleryId, galleries.id))
-    .where(eq(galleries.slug, slug))
-    .orderBy(sql`${shows.status} = 'published' DESC`, desc(shows.updatedAt))
+    .where(and(eq(galleries.slug, slug), eq(shows.status, 'published')))
+    .orderBy(desc(shows.updatedAt))
     .limit(1)
     .prepare('public_tenant_by_slug')
     .execute()
@@ -850,7 +855,7 @@ export async function recordVisit(
     return { status: 400, body: { error: 'Visitor id is not valid.' } }
   }
   const fresh = await tenantById(db, tenant.gallery.id)
-  if (!fresh || fresh.gallery.status !== 'live') return GALLERY_NOT_FOUND
+  if (!isPublicTenant(fresh)) return GALLERY_NOT_FOUND
   const { gallery, show } = fresh
   const day = tehranDay(now)
   if (kind === 'scan') {
@@ -924,7 +929,7 @@ export async function recordLead(
     return { status: 400, body: { error: 'A work id is required.' } }
   }
   const fresh = await tenantById(db, tenant.gallery.id)
-  if (!fresh || fresh.gallery.status !== 'live') return GALLERY_NOT_FOUND
+  if (!isPublicTenant(fresh)) return GALLERY_NOT_FOUND
   const { gallery, show } = fresh
   const [found] = await db
     .select({ id: works.id })

@@ -155,7 +155,7 @@ test('a staff session can publish and read the report without sending the access
     assert.ok(session)
     assert.equal(anonymousEditorGate(session), null)
 
-    const first = await handlePilotApi(db, storage, 'GET', null)
+    const first = await handlePilotApi(db, storage, 'GET', { gallery: 'o-gallery' })
     const published = await publishGalleryRecordForSession(db, storage, session.galleryId, {
       ...(first.body as { record: object }).record,
       works: [],

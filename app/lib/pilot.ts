@@ -1,6 +1,6 @@
-import { pilotSeed as seedJson } from './galleries'
+import { pilotSeed as seedJson } from './pilot-seed'
 import { leadBody } from './consent'
-import { isDatabaseGallery, O_SLUG } from './galleries'
+import { isDatabaseGallery } from './galleries'
 import { QR_CODE_PATTERN, tehranDay } from './tehran-day'
 
 export type PilotStatus = 'available' | 'reserved' | 'sold'
@@ -56,10 +56,6 @@ export interface GalleryPageData {
 }
 
 export const seed = seedJson as PilotRecord
-export const QR_ADDRESS =
-  typeof window !== 'undefined'
-    ? `${window.location.origin}/g/${O_SLUG}`
-    : `https://inview.moshes.io/g/${O_SLUG}`
 
 const visitorKey = 'inview-visitor-id'
 const memoryVisitorId = crypto.randomUUID()
@@ -134,12 +130,6 @@ export function gallerySlugFromPath(pathname: string): string | null {
   return pathname.match(/^\/g\/([^/]+)/)?.[1] ?? null
 }
 
-export async function fetchPilot(): Promise<{ record: PilotRecord }> {
-  const res = await fetch('/api/v1/pilot', { cache: 'no-store' })
-  if (!res.ok) throw new Error('The gallery record did not load.')
-  return res.json()
-}
-
 const sent = new Set<string>()
 
 function readBody(res: Response) {
@@ -148,7 +138,7 @@ function readBody(res: Response) {
 
 export function recordLandingScan(gallery: string, qrCode?: string | null) {
   const day = tehranDay()
-  const localKey = gallery === O_SLUG ? `inview-o-scan-${day}` : `inview-scan-${gallery}-${day}`
+  const localKey = `inview-scan-${gallery}-${day}`
   try {
     if (localStorage.getItem(localKey) === '1') return
   } catch { /* count on the server */ }

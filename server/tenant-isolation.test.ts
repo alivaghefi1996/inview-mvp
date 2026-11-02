@@ -275,7 +275,7 @@ test('demo status comes from the row and tenant resolution does not bootstrap a 
   const f = await fixture()
   try {
     assert.equal(await tenantBySlug(f.db, 'o-gallery'), null)
-    assert.equal((await request(f.app).get('/api/v1/pilot')).status, 404)
+    assert.equal((await request(f.app).get('/api/v1/pilot?gallery=o-gallery')).status, 404)
     assert.equal((await request(f.app).put('/api/v1/pilot').send({ gallery: 'x'.repeat(300), accessCode: 'wrong' })).status, 404)
     assert.equal((await f.db.select().from(galleries)).length, 2)
     const own = f.tenants[0]

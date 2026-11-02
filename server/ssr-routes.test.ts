@@ -64,7 +64,12 @@ test('the language comes from the cookie, then from the path', () => {
   assert.equal(defaultLang('/g/o-gallery/works'), 'fa')
   assert.equal(defaultLang('/site/o-gallery'), 'fa')
   assert.equal(defaultLang('/g/rooz-gallery'), 'en')
-  assert.equal(defaultLang('/g/o-gallery-two'), 'en')
+  assert.equal(defaultLang('/site/rooz-gallery'), 'en')
+  // ADR 0002: a second gallery opens in Persian, like the pilot.
+  assert.equal(defaultLang('/g/o-gallery-two'), 'fa')
+  assert.equal(defaultLang('/g/sample'), 'fa')
+  assert.equal(defaultLang('/site/sample'), 'fa')
+  assert.equal(defaultLang('/me'), 'en')
 
   assert.equal(resolveLang('/g/o-gallery', null), 'fa')
   assert.equal(resolveLang('/g/o-gallery', 'inview-lang=en'), 'en')

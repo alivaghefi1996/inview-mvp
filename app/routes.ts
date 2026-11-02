@@ -35,6 +35,7 @@ export default [
     route('audit', 'routes/ops.audit.tsx'),
     route('health', 'routes/ops.health.tsx'),
   ]),
+  route('g/:slug/manifest.webmanifest', 'routes/g.$slug.manifest.ts'),
   layout('routes/g.tsx', [
     route('g/:slug', 'routes/g.$slug._index.tsx'),
     route('g/:slug/works', 'routes/g.$slug.works._index.tsx'),

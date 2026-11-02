@@ -83,7 +83,11 @@ test.describe('server rendering', () => {
   test('unknown slugs and unknown work ids answer 404', async ({ request }) => {
     const slug = await request.get('/g/unknown-slug')
     expect(slug.status()).toBe(404)
-    expect(await slug.text()).toContain('Page not found')
+    expect(await slug.text()).toContain('صفحه پیدا نشد')
+
+    const english = await request.get('/g/unknown-slug', { headers: { cookie: 'inview-lang=en' } })
+    expect(english.status()).toBe(404)
+    expect(await english.text()).toContain('Page not found')
 
     const site = await request.get('/site/unknown')
     expect(site.status()).toBe(404)

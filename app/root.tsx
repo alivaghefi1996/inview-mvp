@@ -1,4 +1,4 @@
-import { O_SLUG } from './lib/galleries'
+import { gallerySurfaceSlug } from './lib/galleries'
 import {
   isRouteErrorResponse,
   Link,
@@ -14,6 +14,7 @@ import type { Route } from './+types/root'
 import { useT } from './lib/i18n'
 import { metaCopy } from './lib/meta'
 import { dirFor, resolveLang } from './lib/lang'
+import { APP_MANIFEST_PATH, galleryManifestPath } from './lib/manifest'
 import { ServiceWorker } from './components/ServiceWorker'
 import '@fontsource/fraunces/400.css'
 import '@fontsource/fraunces/500.css'
@@ -31,14 +32,14 @@ export type SerifHandle = { usesMediumSerif?: (data: unknown) => boolean }
 export const links: Route.LinksFunction = () => [
   { rel: 'icon', href: '/icons/favicon.svg', type: 'image/svg+xml' },
   { rel: 'apple-touch-icon', href: '/icons/apple-touch-icon.png' },
-  { rel: 'manifest', href: '/manifest.webmanifest' },
 ]
 
 export function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const lang = resolveLang(url.pathname, request.headers.get('cookie'))
   const origin = (process.env.PUBLIC_APP_URL || url.origin).replace(/\/$/, '')
-  return { lang, dir: dirFor(lang), origin }
+  const slug = gallerySurfaceSlug(url.pathname)
+  return { lang, dir: dirFor(lang), origin, manifest: slug ? galleryManifestPath(slug) : APP_MANIFEST_PATH }
 }
 
 export const meta: Route.MetaFunction = ({ data }) => {
@@ -60,6 +61,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="theme-color" content="#17332E" />
         <Meta />
         <Links />
+        <link rel="manifest" href={data?.manifest ?? APP_MANIFEST_PATH} />
         {persian ? (
           <link rel="stylesheet" href={persianFonts} />
         ) : (
@@ -90,7 +92,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     <main className="pad empty" dir={dir}>
       <h1 className="page-title">{missing ? t.notFound : t.loadFailed}</h1>
       <p className="muted">{missing ? t.notFoundBody : t.loadFailedBody}</p>
-      <Link className="btn btn-outline" to={`/g/${O_SLUG}`}>{t.goToGallery}</Link>
+      <Link className="btn btn-outline" to="/">{t.goHome}</Link>
       {import.meta.env.DEV && error instanceof Error && <pre className="muted small">{error.message}</pre>}
     </main>
   )

@@ -1,8 +1,4 @@
-export { default as pilotSeed } from '../data/o-gallery-seed.json'
 import { gallery } from '../data/gallery'
-
-/** The pilot gallery. Its pages come from the database. */
-export const O_SLUG = 'o-gallery'
 
 /** The sales demo. Its pages come from `app/data/gallery.ts`. */
 export const DEMO_SLUG = gallery.slug
@@ -13,4 +9,9 @@ export function isDatabaseGallery(slug: string | undefined): boolean {
 
 export function galleryBase(slug: string): string {
   return `/g/${slug}`
+}
+
+/** `/g/:slug` is the visitor app and `/site/:slug` is the website. Both belong to one gallery. */
+export function gallerySurfaceSlug(pathname: string): string | null {
+  return pathname.match(/^\/(?:g|site)\/([^/]+)/)?.[1] ?? null
 }

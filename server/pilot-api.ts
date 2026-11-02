@@ -1,4 +1,5 @@
 import {
+  isPublicTenant,
   loadPublicRecord,
   publishGalleryRecord,
   readStaffReport,
@@ -9,13 +10,13 @@ import {
 } from './gallery-record'
 import type { ObjectStorage } from './storage'
 
-import { O_SLUG } from '../app/lib/galleries'
-
 const UNKNOWN_GALLERY = GALLERY_NOT_FOUND
 
+export const MISSING_GALLERY = { status: 400, body: { error: 'Name the gallery.' } }
+
+/** An empty slug reaches no gallery, so every caller answers `MISSING_GALLERY` for it. */
 export function gallerySlugOf(body: unknown): string {
   const raw = body && typeof body === 'object' ? (body as { gallery?: unknown }).gallery : undefined
-  if (raw === undefined || raw === null || raw === '') return O_SLUG
   return typeof raw === 'string' ? raw : ''
 }
 
@@ -26,7 +27,9 @@ export async function handlePilotApi(
   body: unknown,
 ) {
   const verb = (method || 'GET').toUpperCase()
-  const tenant = await tenantBySlug(db, gallerySlugOf(body))
+  const slug = gallerySlugOf(body)
+  if (!slug) return MISSING_GALLERY
+  const tenant = await tenantBySlug(db, slug)
   if (!tenant) return UNKNOWN_GALLERY
   if (verb === 'PUT') {
     const payload = (body || {}) as { password?: string; accessCode?: string; record?: unknown }
@@ -36,7 +39,7 @@ export async function handlePilotApi(
   if (verb !== 'GET' && verb !== 'HEAD' && verb !== 'POST') {
     return { status: 405, body: { error: 'Method not allowed.' } }
   }
-  if (tenant.gallery.status !== 'live') return UNKNOWN_GALLERY
+  if (!isPublicTenant(tenant)) return UNKNOWN_GALLERY
   if (verb === 'GET' || verb === 'HEAD') {
     try {
       return { status: 200, body: await loadPublicRecord(db, tenant) }

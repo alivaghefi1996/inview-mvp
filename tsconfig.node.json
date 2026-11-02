@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["server.js", "server/*.js", "vite.config.ts", "drizzle.config.ts"],
+  "include": ["server.js", "server/*.js", "vite.config.ts", "drizzle.config.ts", "app/lib/manifest.ts"],
   "compilerOptions": {
     "composite": true,
     "strict": true,
