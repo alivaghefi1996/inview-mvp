@@ -66,7 +66,7 @@ export function VisitorShell() {
             <div className="v-brand-stack">
               {isDb ? (
                 <Link to={`/site/${slug}`} className="v-gallery v-wordmark" title={brand}>
-                  {record.logo && !(demo && isPrices) ? <img className="v-logo" src={record.logo} alt={oName} /> : brand}
+                  {record.logo && !(demo && isPrices) ? <img className="v-logo" src={record.logo} alt={oName} fetchPriority="low" /> : brand}
                 </Link>
               ) : (
                 <Link to={base} className="v-gallery" title={brand}>{brand}</Link>
