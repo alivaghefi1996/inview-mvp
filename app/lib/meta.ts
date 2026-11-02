@@ -108,6 +108,10 @@ function coverWork(record: PilotRecord | null): PilotWork | undefined {
   return record?.works.find((work) => !work.sample && work.image) ?? record?.works.find((work) => work.image)
 }
 
+function firstWallWork(record: PilotRecord | null): PilotWork | undefined {
+  return record?.works.find((work) => !work.sample)
+}
+
 function galleryName(record: PilotRecord | null, lang: Lang): string {
   if (record) return pick(lang, record.name, record.nameFa)
   return lang === 'fa' ? demoGallery.nameFa : demoGallery.name
@@ -166,5 +170,6 @@ export function galleryPageMeta(
   }
   const tags = pageMeta({ lang, origin, path, ...map[kind], image: coverImage(record), noindex: Boolean(record?.demo) })
   if (kind === 'show') tags.push(...preloadImage(coverWork(record), '(min-width: 960px) 55vw, 100vw'))
+  if (kind === 'works') tags.push(...preloadImage(firstWallWork(record), '(min-width: 960px) 30vw, 50vw'))
   return tags
 }
