@@ -13,6 +13,7 @@ import {
   works,
 } from '../database/schema'
 import { CONSENT_TEXT_VERSION } from '../app/lib/consent'
+import { localDigits } from '../app/lib/format'
 import { parseToman } from '../app/lib/price'
 import {
   GALLERY_TIME_ZONE,
@@ -546,6 +547,10 @@ export async function readStaffReportForSession(db: Db, galleryId: string, showI
 const DUPLICATE_WORK_ERROR = 'Two works have the same id. Give each work its own id.'
 const DUPLICATE_WORK_ERROR_FA = 'دو اثر شناسه یکسان دارند. برای هر اثر شناسه جداگانه بگذارید.'
 
+export const MAX_WORKS = 100
+const TOO_MANY_WORKS_ERROR = `You can publish up to ${MAX_WORKS} works.`
+const TOO_MANY_WORKS_ERROR_FA = `حداکثر ${localDigits('fa', String(MAX_WORKS))} اثر می‌توانید منتشر کنید.`
+
 function sanitizeRecord(
   input: unknown,
 ): { error: string; errorFa?: string } | { record: Omit<GalleryRecordDto, 'slug' | 'demo' | 'updatedAt' | 'logo'> & { logo?: string | null } } {
@@ -554,7 +559,7 @@ function sanitizeRecord(
   const name = text(body.name, 80)
   if (!name) return { error: 'Enter the gallery name.' }
   if (!Array.isArray(body.works)) return { error: 'Works must be a list.' }
-  if (body.works.length > 40) return { error: 'You can publish up to 40 works.' }
+  if (body.works.length > MAX_WORKS) return { error: TOO_MANY_WORKS_ERROR, errorFa: TOO_MANY_WORKS_ERROR_FA }
 
   const worksOut: GalleryWorkDto[] = []
   const usedIds = new Set<string>()
