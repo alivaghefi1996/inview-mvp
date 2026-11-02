@@ -171,7 +171,7 @@ for (const width of [390, 1440]) {
   }
 
   for (const lang of ['fa', 'en'] as const) {
-    test(`operator re-enable and gallery error in ${lang}`, async ({ page, baseURL, browser }, testInfo) => {
+    test(`operator re-enable and gallery error at ${width} in ${lang}`, async ({ page, baseURL, browser }, testInfo) => {
       test.setTimeout(180000)
       const origin = baseURL || 'http://127.0.0.1:3000'
       const id = randomUUID().slice(0, 8)
@@ -182,7 +182,7 @@ for (const width of [390, 1440]) {
       try {
         invite = await createOperatorInvite(sql, { email, name: 'Re-enable test operator', role: 'admin', publicAppUrl: origin })
       } finally { await sql.end() }
-      await page.setViewportSize({ width: 390, height: 900 })
+      await page.setViewportSize({ width, height: 900 })
       await page.context().addCookies([{ name: 'inview-lang', value: lang, url: origin }])
       await page.goto('/ops')
       await expect(page).toHaveURL(/\/ops\/sign-in$/)
