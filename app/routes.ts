@@ -11,6 +11,7 @@ export default [
   route('ops/sign-in', 'routes/ops.sign-in.tsx'),
   route('staff/invite/:token', 'routes/staff.invite.tsx'),
   route('staff/sign-in', 'routes/staff.sign-in.tsx'),
+  route('staff/forgot-password', 'routes/staff.forgot-password.tsx'),
   route('staff/sign-out', 'routes/staff.sign-out.tsx'),
   route('staff', 'routes/staff._index.tsx'),
   route('staff/style', 'routes/staff.style.tsx'),

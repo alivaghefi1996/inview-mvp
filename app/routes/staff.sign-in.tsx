@@ -1,4 +1,4 @@
-import { data, redirect, useActionData } from 'react-router'
+import { data, redirect, useActionData, useSearchParams } from 'react-router'
 import { StaffSignIn, type SignInError } from '../pages/gallery/StaffSignIn'
 import { redirectIfSignedIn, signInAction } from './staff-session.server'
 import { panelMeta } from '../lib/panel-meta'
@@ -30,5 +30,6 @@ export async function action({ request, context }: { request: Request; context: 
 
 export default function StaffSignInRoute() {
   const result = useActionData() as { error?: SignInError } | undefined
-  return <StaffSignIn error={result?.error} />
+  const [params] = useSearchParams()
+  return <StaffSignIn error={result?.error} mode={params.get('mode') === 'code' ? 'code' : 'account'} next={params.get('next') ?? undefined} />
 }

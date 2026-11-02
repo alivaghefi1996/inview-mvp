@@ -45,6 +45,7 @@ async function publishFlowWork(page: Page, origin: string) {
 }
 
 async function signInWithGalleryCode(page: Page) {
+  await page.getByRole('link', { name: 'Gallery code', exact: true }).click()
   const form = page.locator('form').filter({ has: page.getByLabel('Gallery access code', { exact: true }) })
   await form.getByLabel('Gallery address name', { exact: true }).fill('o-gallery')
   await form.getByLabel('Gallery access code', { exact: true }).fill(accessCode)
