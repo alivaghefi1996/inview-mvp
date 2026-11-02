@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import type { AppDatabase } from '../database/context'
-import { qrCodes } from '../database/schema'
+import { qrCodes, shows } from '../database/schema'
 import { AccountInputError } from './accounts'
 import { can, type Principal } from './authz'
 import { type GalleryTenant } from './gallery-record'
@@ -127,7 +127,14 @@ export async function createStaffQr(db: AppDatabase, principal: Principal, tenan
   })
 }
 
+/** A printed code belongs to the gallery. `show_id` only records the show that was current when staff made it. */
+export async function staffQrCodes(db: AppDatabase, tenant: GalleryTenant) {
+  return db.select({ code: qrCodes.code, label: qrCodes.label }).from(qrCodes).innerJoin(shows, eq(shows.id, qrCodes.showId))
+    .where(eq(shows.galleryId, tenant.gallery.id)).orderBy(qrCodes.createdAt)
+}
+
 export async function staffQr(db: AppDatabase, tenant: GalleryTenant, code: string) {
-  const [qr] = await db.select({ code: qrCodes.code, label: qrCodes.label }).from(qrCodes).where(and(eq(qrCodes.showId, tenant.show.id), eq(qrCodes.code, code))).limit(1)
+  const [qr] = await db.select({ code: qrCodes.code, label: qrCodes.label }).from(qrCodes).innerJoin(shows, eq(shows.id, qrCodes.showId))
+    .where(and(eq(shows.galleryId, tenant.gallery.id), eq(qrCodes.code, code))).limit(1)
   return qr
 }

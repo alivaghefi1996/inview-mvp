@@ -1,9 +1,7 @@
-import { eq } from 'drizzle-orm'
 import { Form, data, useActionData, useLoaderData } from 'react-router'
 import { database } from '../../database/context'
-import { qrCodes } from '../../database/schema'
 import { AccountInputError } from '../../server/accounts'
-import { createStaffQr } from '../../server/qr'
+import { createStaffQr, staffQrCodes } from '../../server/qr'
 import { staffHeaders, staffTenant } from '../../server/staff'
 import { can } from '../../server/authz'
 import { useStaffT } from '../lib/i18n-staff'
@@ -18,7 +16,7 @@ export const headers = staffHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {
   const db = database()
   const { principal, tenant } = await staffTenant(db, request, params.slug ?? '', 'create-qr')
-  const codes = await db.select({ code: qrCodes.code, label: qrCodes.label }).from(qrCodes).where(eq(qrCodes.showId, tenant.show.id)).orderBy(qrCodes.createdAt)
+  const codes = await staffQrCodes(db, tenant)
   return { gallery: { slug: tenant.gallery.slug, nameEn: tenant.gallery.nameEn, nameFa: tenant.gallery.nameFa }, codes, permissions: (['edit-catalogue', 'manage-staff', 'create-qr'] as const).filter((action) => can(principal, action, tenant.gallery.id)) }
 }
 export async function action({ request, params }: { request: Request; params: { slug?: string } }) {

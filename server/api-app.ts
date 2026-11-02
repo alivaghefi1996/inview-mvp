@@ -55,6 +55,10 @@ async function apiTenant(db: Db, req: Request, slug: unknown, action: Action, co
   return { tenant, principal }
 }
 
+function showQuery(req: Request): string | null {
+  return typeof req.query.show === 'string' ? req.query.show : null
+}
+
 function apiFailure(res: express.Response, error: unknown): boolean {
   if (error instanceof ApiResultError) {
     res.setHeader('Cache-Control', 'no-store')
@@ -216,7 +220,7 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
     }
     try {
       const { tenant, principal } = await apiTenant(db, req, req.query.gallery, 'view-report', req.get('x-access-code'))
-      sendJson(res, 200, await staffReport(db, principal, tenant.gallery.id))
+      sendJson(res, 200, await staffReport(db, principal, tenant.gallery.id, showQuery(req)))
     } catch (error) {
       if (apiFailure(res, error)) return
       console.error(error)
@@ -240,7 +244,7 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
     res.setHeader('Cache-Control', 'no-store')
     try {
       const { tenant, principal } = await apiTenant(db, req, req.query.gallery, 'export-leads')
-      const result = await staffCsv(db, principal, tenant.gallery.id)
+      const result = await staffCsv(db, principal, tenant.gallery.id, showQuery(req))
       if (result.status !== 200) {
         sendJson(res, result.status, result.body)
         return
