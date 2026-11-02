@@ -17,6 +17,7 @@ env:
   O_GALLERY_ACCESS_CODE: inview
   PUBLIC_APP_URL: http://127.0.0.1:3000
   MEDIA_DIR: .data/media
+  PUBLIC_RECORD_TTL_MS: '0'
 
 jobs:
   test:

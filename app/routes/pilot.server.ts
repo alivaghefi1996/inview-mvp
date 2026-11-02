@@ -1,40 +1,8 @@
 import { database } from '../../database/context'
-import { galleryNotFound, loadPublicRecord, tenantBySlug } from '../../server/gallery-record'
+import { galleryNotFound, loadPublicPage } from '../../server/gallery-record'
 import { artworks } from '../data/gallery'
 import { DEMO_SLUG } from '../lib/galleries'
 import type { GalleryPageData, PilotRecord, PilotWork } from '../lib/pilot'
-
-type GalleryRead = { found: true; record: PilotRecord | null } | { found: false }
-
-const perRequest = new WeakMap<Request, Map<string, Promise<GalleryRead>>>()
-
-function readGallery(slug: string): Promise<GalleryRead> {
-  const db = database()
-  return tenantBySlug(db, slug).then(async (tenant): Promise<GalleryRead> => {
-    if (!tenant || tenant.gallery.status !== 'live') return { found: false }
-    let record: PilotRecord
-    try {
-      ;({ record } = await loadPublicRecord(db, tenant))
-    } catch (error) {
-      if (error instanceof Response && error.status === 404) return { found: false }
-      throw error
-    }
-    return { found: true, record }
-  })
-}
-
-function sharedRead(request: Request, slug: string): Promise<GalleryRead> {
-  let bySlug = perRequest.get(request)
-  if (!bySlug) {
-    bySlug = new Map()
-    perRequest.set(request, bySlug)
-  }
-  const started = bySlug.get(slug)
-  if (started) return started
-  const pending = readGallery(slug)
-  bySlug.set(slug, pending)
-  return pending
-}
 
 export function notFound(): Response {
   return galleryNotFound()
@@ -45,20 +13,20 @@ function unavailable(): Response {
 }
 
 export async function loadGalleryPage(
-  request: Request,
+  _request: Request,
   slug: string | undefined,
 ): Promise<GalleryPageData> {
   if (!slug) throw notFound()
   if (slug === DEMO_SLUG) return { pilot: null }
-  let read: GalleryRead
+  let page: { record: PilotRecord } | null
   try {
-    read = await sharedRead(request, slug)
+    page = await loadPublicPage(database(), slug)
   } catch (error) {
     console.error('Gallery loader failed', error)
     throw unavailable()
   }
-  if (!read.found) throw notFound()
-  return { pilot: read.record }
+  if (!page) throw notFound()
+  return { pilot: page.record }
 }
 
 export async function loadWorkPage(
