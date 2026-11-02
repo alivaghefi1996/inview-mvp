@@ -16,7 +16,7 @@ for (const width of [390, 1440]) {
   test(`signed-in staff see the style page in both languages at ${width}`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.context().addCookies([{ name: 'inview-lang', value: 'en', url: baseURL || 'http://127.0.0.1:3000' }])
-    await page.goto('/staff/sign-in?next=%2Fstaff%2Fstyle')
+    await page.goto('/staff/sign-in?mode=code&next=%2Fstaff%2Fstyle')
     const form = page.locator('form').filter({ has: page.getByLabel('Gallery access code', { exact: true }) })
     await form.getByLabel('Gallery address name', { exact: true }).fill('o-gallery')
     await form.getByLabel('Gallery access code', { exact: true }).fill(accessCode)

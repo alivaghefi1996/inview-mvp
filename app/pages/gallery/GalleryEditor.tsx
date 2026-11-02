@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { OLandingPreview } from '../visitor/OGalleryPages'
 import { parseToman } from '../../lib/price'
-import { type PilotRecord, type PilotWork } from '../../lib/pilot'
+import { publishBody, type PilotRecord, type PilotWork } from '../../lib/pilot'
 import { asciiDigits, dayToParts, localDigits, monthLength, monthNames, partsToDay } from '../../lib/format'
 import { useStaffT, type StaffDict } from '../../lib/i18n-staff'
 import type { Lang } from '../../lib/lang'
@@ -325,7 +325,7 @@ export default function GalleryEditor({ initialRecord, initialReport = null, rep
       const res = await fetch('/api/v1/pilot', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gallery: initialRecord.slug, show: show?.id, record: draft }),
+        body: publishBody(initialRecord.slug, show?.id, draft),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {

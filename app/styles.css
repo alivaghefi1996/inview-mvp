@@ -1360,6 +1360,37 @@ p { text-wrap: pretty; }
 .gate-card .btn { align-self: flex-start; }
 .gate-card p { margin: 0; }
 .gate-card .ink-rule { margin-bottom: var(--space-2); }
+.gate-brand { color: var(--ink); text-decoration: none; }
+.gate-brand:hover { text-decoration: underline; text-underline-offset: 4px; }
+.gate-modes { display: flex; gap: var(--space-4); border-block-end: 1px solid var(--line); margin-block-end: 44px; }
+.gate-modes a { padding-block: 10px; color: var(--muted); text-decoration: none; border-block-end: 2px solid transparent; margin-block-end: -1px; }
+.gate-modes a:hover { color: var(--ink); }
+.gate-modes a[aria-current='page'] { color: var(--ink); font-weight: 600; border-block-end-color: var(--pine); }
+.gate-link { align-self: flex-start; color: var(--ink); text-underline-offset: 3px; padding-block: 4px; }
+.gate-card form > p:first-child + .gate-field { margin-block-start: 44px; }
+.gate-perch { position: relative; }
+.owl { position: absolute; inset-block-end: calc(100% - 3px); inset-inline-end: 12px; width: 62px; height: auto; pointer-events: none; overflow: visible; }
+.owl-body { fill: var(--pine); }
+.owl-belly { fill: var(--pine-tint); }
+.owl-eye { fill: var(--surface); }
+.owl-pupil { fill: var(--ink); }
+.owl-lid { fill: var(--pine); transform: scaleY(0); transform-box: fill-box; transform-origin: top; }
+.owl-beak { fill: var(--ochre); }
+.owl-feet { fill: none; stroke: var(--ochre); stroke-width: 2.5; stroke-linecap: round; }
+.owl-wing { fill: var(--pine-hover); transform-box: fill-box; transform-origin: bottom center; }
+.owl-pupils { transition: transform 140ms var(--ease-out); }
+.owl-wing { transition: transform 220ms var(--ease-out); }
+.owl[data-pose='hide'] .owl-lid { transform: scaleY(1); }
+.owl[data-pose='hide'] .owl-wing-start { transform: translate(12px, -18px) scale(1.25); }
+.owl[data-pose='hide'] .owl-wing-end { transform: translate(-12px, -18px) scale(1.25); }
+@media (prefers-reduced-motion: no-preference) {
+  .owl { animation: owl-settle 420ms var(--ease-out) both; }
+  .owl:not([data-pose='hide']) .owl-lid { animation: owl-blink 6s linear infinite; }
+  .owl[data-alert] { animation: owl-doubt 420ms var(--ease-out) both; }
+  @keyframes owl-settle { from { opacity: 0; transform: translateY(6px); } }
+  @keyframes owl-blink { 0%, 96%, 100% { transform: scaleY(0); } 98% { transform: scaleY(1); } }
+  @keyframes owl-doubt { 30% { transform: rotate(-6deg); } 65% { transform: rotate(5deg); } }
+}
 .brand {
   font-family: var(--serif);
   font-weight: 500;
