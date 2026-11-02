@@ -50,8 +50,9 @@ export function Overview() {
           <div className="cols" role="img" aria-label={`Scans per day: ${report.scansPerDay.map((d) => `${d.label} ${d.value}`).join(', ')}`}>
             {report.scansPerDay.map((d) => (
               <span key={d.label} className="col-wrap">
-                <span className="col-value" aria-hidden>{d.value}</span>
-                <span className={`col ${d.friday ? 'copper' : ''}`} style={{ height: `${(d.value / maxDay) * 100}%` }} />
+                <span className={`col ${d.friday ? 'copper' : ''}`} style={{ height: `${(d.value / maxDay) * 100}%` }}>
+                  <span className="col-value" aria-hidden>{d.value}</span>
+                </span>
                 <span className="col-label">{d.label}</span>
               </span>
             ))}

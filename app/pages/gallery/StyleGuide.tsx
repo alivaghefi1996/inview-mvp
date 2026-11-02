@@ -394,12 +394,13 @@ export default function StyleGuide() {
                 ))}
               </ul>
             </Specimen>
-            <Specimen lang={lang} code=".cols .col-wrap .col-value .col .col-label">
+            <Specimen lang={lang} code=".cols .col-wrap .col .col-value .col-label">
               <div className="cols" role="img" aria-label={`${t.columnsLabel}: ${COLUMN_VALUES.map((value, index) => `${t.tableDays[index]} ${format.number(value)}`).join(', ')}`}>
                 {COLUMN_VALUES.map((value, index) => (
                   <span key={t.tableDays[index]} className="col-wrap">
-                    <span className="col-value" aria-hidden>{format.number(value)}</span>
-                    <span className="col" style={{ height: `${(value / Math.max(...COLUMN_VALUES)) * 100}%` }} />
+                    <span className="col" style={{ height: `${(value / Math.max(...COLUMN_VALUES)) * 100}%` }}>
+                      <span className="col-value" aria-hidden>{format.number(value)}</span>
+                    </span>
                     <span className="col-label">{t.tableDays[index]}</span>
                   </span>
                 ))}
