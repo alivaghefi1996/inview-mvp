@@ -184,8 +184,8 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
       if (verb === 'PUT') {
         const { tenant, principal } = await apiTenant(db, req, body.gallery, 'edit-catalogue', body.accessCode || body.password)
         const result = await db.transaction(async (tx: Db) => {
-          const saved = await publishGalleryRecordForSession(tx, storage, tenant.gallery.id, body.record)
-          if (saved.status === 200) await writeAudit(tx, { ...auditActor(principal), galleryId: tenant.gallery.id, action: 'publish', targetType: 'show', targetId: tenant.show.id })
+          const saved = await publishGalleryRecordForSession(tx, storage, tenant.gallery.id, body.record, typeof body.show === 'string' ? body.show : null)
+          if (saved.status === 200) await writeAudit(tx, { ...auditActor(principal), galleryId: tenant.gallery.id, action: 'publish', targetType: 'show', targetId: typeof body.show === 'string' ? body.show : tenant.show.id })
           return saved
         })
         if (result.status === 200) clearPublicRecordCache(db)
