@@ -1056,12 +1056,12 @@ p { text-wrap: pretty; }
   align-items: flex-start;
   max-width: 36ch;
 }
-.empty-state h2 {
+.empty-state :is(h1, h2) {
   font: 500 1.75rem/1.15 var(--serif);
   margin: 0;
   letter-spacing: -0.02em;
 }
-.visitor.fa .empty-state h2 { font-family: var(--fa); font-weight: 700; }
+.visitor.fa .empty-state :is(h1, h2) { font-family: var(--fa); font-weight: 700; }
 .empty-state p { margin: 0; color: var(--muted); }
 
 @media (min-width: 960px) {
