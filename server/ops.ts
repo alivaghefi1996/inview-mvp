@@ -17,6 +17,9 @@ function requiredText(value: string, max: number) {
   return value.trim()
 }
 
+// These slugs lose to static /staff routes in app/routes.ts, so the gallery would have no editor.
+const reservedSlugs = new Set(['style', 'sign-in', 'sign-out', 'invite'])
+
 const profileColumns = {
   id: galleries.id, slug: galleries.slug, nameEn: galleries.nameEn, nameFa: galleries.nameFa,
   status: galleries.status, notes: galleries.notes, sharedCodeEnabled: galleries.sharedCodeEnabled,
@@ -62,6 +65,7 @@ export async function createGallery(db: AccountDb, principal: Principal | null, 
 }) {
   const actor = requireOperator(principal)
   if (!/^[a-z0-9-]{3,40}$/.test(input.slug)) throw new AccountInputError('Use 3 to 40 lowercase letters, digits or hyphens for the slug.')
+  if (reservedSlugs.has(input.slug)) throw new AccountInputError('This slug matches a staff page. Select a different slug.')
   const nameFa = requiredText(input.nameFa, 80)
   const nameEn = requiredText(input.nameEn, 80)
   const showTitle = requiredText(input.showTitle, 160)
