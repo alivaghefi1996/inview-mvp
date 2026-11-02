@@ -191,6 +191,15 @@
       "screenshot": false
     },
     {
+      "id": "staff-style",
+      "group": "staff",
+      "label": "Style page",
+      "labelFa": "صفحهٔ سبک",
+      "path": "/staff/style",
+      "access": "staff",
+      "screenshot": false
+    },
+    {
       "id": "ops-sign-in",
       "group": "operator",
       "label": "Operator sign-in",

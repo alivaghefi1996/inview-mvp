@@ -1,0 +1,12 @@
+{
+  "telemetry": false,
+  "detector": {
+    "ignoreValues": [
+      { "rule": "overused-font", "value": "fraunces", "reason": "Fraunces is the Inview brand font for Latin titles. See docs/design/direction.md." },
+      { "rule": "overused-font", "value": "sora", "reason": "Sora is the Inview brand font for Latin UI text. See docs/design/direction.md." },
+      { "rule": "overused-font", "value": "estedad", "reason": "Estedad is the Inview brand font for all Persian text. See docs/design/direction.md." },
+      { "rule": "cream-palette", "value": "*", "files": ["**/*"], "reason": "--paper is the wall colour of the Catalogue Wall direction, chosen in docs/design/direction.md. It is the page ground of each Inview screen." },
+      { "rule": "em-dash-overuse", "value": "*", "files": ["**/style-page-*.html", "**/staff/style"], "reason": "The style page prints CSS token names such as --ink, and the detector counts each -- as an em-dash. The copy on this page has no em-dashes." }
+    ]
+  }
+}

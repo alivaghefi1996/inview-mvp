@@ -13,6 +13,7 @@ export default [
   route('staff/sign-in', 'routes/staff.sign-in.tsx'),
   route('staff/sign-out', 'routes/staff.sign-out.tsx'),
   route('staff', 'routes/staff._index.tsx'),
+  route('staff/style', 'routes/staff.style.tsx'),
   route('staff/:slug', 'routes/staff.gallery.tsx'),
   route('staff/:slug/report', 'routes/staff.report.tsx'),
   route('staff/:slug/team', 'routes/staff.team.tsx'),
