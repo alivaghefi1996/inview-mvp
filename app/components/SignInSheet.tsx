@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router'
 import { CONSENT_TEXT_VERSION } from '../lib/consent'
+import { DEMO_SLUG } from '../lib/galleries'
 import { gallerySlugFromPath, reportLead } from '../lib/pilot'
 import { normalizePhone, visitor } from '../lib/store'
 import { useT } from '../lib/i18n'
@@ -17,6 +19,8 @@ interface Props {
 
 export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) {
   const { t, dir } = useT()
+  const gallerySlug = gallerySlugFromPath(useLocation().pathname)
+  const isDemo = gallerySlug === DEMO_SLUG
   const [step, setStep] = useState<'phone' | 'code'>('phone')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
@@ -64,6 +68,7 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
     if (!p) return setError(t.badPhone)
     if (!agreeOrExplain()) return
     setError('')
+    if (!isDemo) return finish(p)
     setPhone(p)
     setStep('code')
   }
@@ -73,8 +78,12 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
     const c = code.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
     if (!/^\d{4}$/.test(c)) return setError(t.badCode)
     if (!agreeOrExplain()) return
-    visitor.signIn(phone, CONSENT_TEXT_VERSION)
-    reportLead(gallerySlugFromPath(window.location.pathname), phone, kind, workId)
+    finish(phone)
+  }
+
+  function finish(normalized: string) {
+    visitor.signIn(normalized, CONSENT_TEXT_VERSION)
+    reportLead(gallerySlug, normalized, kind, workId)
     onDone()
   }
 
@@ -102,7 +111,7 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
               value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={!!error} aria-describedby={error ? 'sheet-error' : undefined} />
             <ConsentField checked={consent} label={t.consent} invalid={error === t.needConsent} describedBy={error ? 'sheet-error' : undefined} onChange={onConsent} />
             {error && <p id="sheet-error" className="error" role="alert">{error}</p>}
-            <button className="btn btn-primary" type="submit">{t.sendCode}</button>
+            <button className="btn btn-primary" type="submit">{isDemo ? t.sendCode : t.confirm}</button>
           </form>
         ) : (
           <form onSubmit={submitCode} className="sheet-form" noValidate>
