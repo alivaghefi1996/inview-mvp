@@ -10,10 +10,12 @@ export const meta = panelMeta(staffDictionaries, 'pageTitle')
 
 export const headers = staffHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {
-  return galleryData(request, params.slug ?? '', 'view-report')
+  const data = await galleryData(request, params.slug ?? '', 'view-report')
+  if (data.show.status === 'archived') throw new Response(null, { status: 302, headers: { ...staffHeaders(), Location: `/staff/${data.gallery.slug}/shows` } })
+  return data
 }
 export default function StaffGallery() {
-  const { gallery, record, report, permissions } = useLoaderData<typeof loader>()
+  const { gallery, record, report, permissions, show } = useLoaderData<typeof loader>()
   const reportOnly = !permissions.includes('edit-catalogue')
-  return <GalleryStaffLayout gallery={gallery} permissions={permissions} titleKey={reportOnly ? null : 'pageTitle'}><GalleryEditor key={gallery.slug} initialRecord={record} initialReport={report} canExport={permissions.includes('export-leads')} reportOnly={reportOnly} /></GalleryStaffLayout>
+  return <GalleryStaffLayout gallery={gallery} permissions={permissions} titleKey={reportOnly ? null : 'pageTitle'}><GalleryEditor key={show.id} show={show} initialRecord={record} initialReport={report} canExport={permissions.includes('export-leads')} reportOnly={reportOnly} /></GalleryStaffLayout>
 }

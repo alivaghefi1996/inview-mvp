@@ -17,6 +17,7 @@ export default [
   route('staff/:slug', 'routes/staff.gallery.tsx'),
   route('staff/:slug/report', 'routes/staff.report.tsx'),
   route('staff/:slug/team', 'routes/staff.team.tsx'),
+  route('staff/:slug/shows', 'routes/staff.shows.tsx'),
   route('staff/:slug/qr', 'routes/staff.qr.tsx'),
   route('staff/:slug/qr/:code.svg', 'routes/staff.qr-svg.tsx'),
   route('staff/:slug/preview', 'routes/staff.preview.tsx'),
@@ -36,6 +37,7 @@ export default [
     route('health', 'routes/ops.health.tsx'),
   ]),
   route('g/:slug/manifest.webmanifest', 'routes/g.$slug.manifest.ts'),
+  route('g/:slug/closed', 'routes/g.$slug.closed.tsx'),
   layout('routes/g.tsx', [
     route('g/:slug', 'routes/g.$slug._index.tsx'),
     route('g/:slug/works', 'routes/g.$slug.works._index.tsx'),

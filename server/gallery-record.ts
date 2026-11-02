@@ -316,8 +316,9 @@ async function readLeadList(db: Db, galleryId: string, showId: string, limit = 2
   }))
 }
 
-async function readDays(db: Db, showId: string, now = new Date()): Promise<StaffDayDto[]> {
-  const since = new Date(now.getTime() - REPORT_DAYS * 24 * 60 * 60 * 1000)
+/** An archived show has no recent days, so its table lists its whole run. */
+async function readDays(db: Db, showId: string, wholeRun: boolean, now = new Date()): Promise<StaffDayDto[]> {
+  const since = new Date(wholeRun ? 0 : now.getTime() - REPORT_DAYS * 24 * 60 * 60 * 1000)
   const rows = await db
     .select({ kind: visits.kind, createdAt: visits.createdAt })
     .from(visits)
@@ -447,6 +448,18 @@ async function readPublicPage(
   return value
 }
 
+/** A live gallery between two shows. Its printed QR codes land on a message and not on a 404. */
+export async function galleryBetweenShows(db: Db, slug: string): Promise<{ nameEn: string; nameFa: string } | null> {
+  if (!GALLERY_SLUG_PATTERN.test(slug)) return null
+  const [row] = await db
+    .select({ nameEn: galleries.nameEn, nameFa: galleries.nameFa })
+    .from(galleries)
+    .innerJoin(shows, eq(shows.galleryId, galleries.id))
+    .where(and(eq(galleries.slug, slug), eq(galleries.status, 'live'), eq(shows.status, 'archived')))
+    .limit(1)
+  return row ?? null
+}
+
 /** Public catalogue only. This function does not read visits or leads. */
 export function loadPublicPage(db: Db, slug: string, now: number = Date.now()): Promise<PublicPage | null> {
   const store = cacheFor(db)
@@ -499,12 +512,13 @@ async function staffReportForTenant(
   db: Db,
   galleryId: string,
   showId: string,
+  wholeRun = false,
 ): Promise<StaffReportResult> {
   return {
     status: 200,
     body: {
       visits: await readVisitCounts(db, showId),
-      days: await readDays(db, showId),
+      days: await readDays(db, showId, wholeRun),
       works: await readWorkStats(db, galleryId, showId),
       leads: await readLeadList(db, galleryId, showId),
     },
@@ -526,7 +540,7 @@ export async function readStaffReportForSession(db: Db, galleryId: string, showI
   }
   const selected = await tenantWithShow(db, tenant, showId)
   if (!selected) return { status: 404, body: { error: 'That show was not found.' } }
-  return staffReportForTenant(db, tenant.gallery.id, selected.show.id)
+  return staffReportForTenant(db, tenant.gallery.id, selected.show.id, selected.show.status === 'archived')
 }
 
 const DUPLICATE_WORK_ERROR = 'Two works have the same id. Give each work its own id.'
