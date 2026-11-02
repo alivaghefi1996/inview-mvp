@@ -297,12 +297,12 @@ async function readVisitCounts(db: Db, showId: string): Promise<GalleryStateDto[
   return { scans: Number(scanRow?.value || 0), views: Number(viewRow?.value || 0) }
 }
 
-async function readLeadList(db: Db, galleryId: string, limit = 200): Promise<StaffLeadDto[]> {
+async function readLeadList(db: Db, galleryId: string, showId: string, limit = 200): Promise<StaffLeadDto[]> {
   const rows = await db
     .select({ lead: leads, workTitle: works.title })
     .from(leads)
     .leftJoin(works, and(eq(leads.workId, works.id), eq(works.galleryId, galleryId)))
-    .where(eq(leads.galleryId, galleryId))
+    .where(and(eq(leads.galleryId, galleryId), eq(leads.showId, showId)))
     .orderBy(desc(leads.createdAt))
     .limit(limit)
   return rows.map((row: { lead: typeof leads.$inferSelect; workTitle: string | null }) => ({
@@ -346,7 +346,7 @@ async function readWorkStats(db: Db, galleryId: string, showId: string): Promise
   const leadRows = await db
     .select({ workId: leads.workId, kind: leads.kind, value: count() })
     .from(leads)
-    .where(eq(leads.galleryId, galleryId))
+    .where(and(eq(leads.galleryId, galleryId), eq(leads.showId, showId)))
     .groupBy(leads.workId, leads.kind)
   const stats = new Map<string, StaffWorkDto>()
   for (const row of workRows as Array<{ id: string; title: string }>) {
@@ -479,7 +479,21 @@ type StaffReportBody = Omit<GalleryStateDto, 'record'>
 
 type StaffReportResult =
   | { status: 200; body: StaffReportBody }
-  | { status: 401; body: { error: string } }
+  | { status: 401 | 404; body: { error: string } }
+
+const SHOW_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Without `showId`, a report is for the current show. A show of another gallery resolves to null. */
+async function reportShowId(db: Db, tenant: GalleryTenant, showId?: string | null): Promise<string | null> {
+  if (!showId) return tenant.show.id
+  if (!SHOW_ID_PATTERN.test(showId)) return null
+  const [show] = await db
+    .select({ id: shows.id })
+    .from(shows)
+    .where(and(eq(shows.id, showId), eq(shows.galleryId, tenant.gallery.id)))
+    .limit(1)
+  return show?.id ?? null
+}
 
 async function staffReportForTenant(
   db: Db,
@@ -492,7 +506,7 @@ async function staffReportForTenant(
       visits: await readVisitCounts(db, showId),
       days: await readDays(db, showId),
       works: await readWorkStats(db, galleryId, showId),
-      leads: await readLeadList(db, galleryId),
+      leads: await readLeadList(db, galleryId, showId),
     },
   }
 }
@@ -505,12 +519,14 @@ export async function readStaffReport(db: Db, tenant: GalleryTenant, accessCode:
   return staffReportForTenant(db, gallery.id, show.id)
 }
 
-export async function readStaffReportForSession(db: Db, galleryId: string): Promise<StaffReportResult> {
+export async function readStaffReportForSession(db: Db, galleryId: string, showId?: string | null): Promise<StaffReportResult> {
   const tenant = await tenantById(db, galleryId)
   if (!tenant) {
     return { status: 401, body: { error: 'Sign in to see visits and phone numbers.' } }
   }
-  return staffReportForTenant(db, tenant.gallery.id, tenant.show.id)
+  const reportShow = await reportShowId(db, tenant, showId)
+  if (!reportShow) return { status: 404, body: { error: 'That show was not found.' } }
+  return staffReportForTenant(db, tenant.gallery.id, reportShow)
 }
 
 const DUPLICATE_WORK_ERROR = 'Two works have the same id. Give each work its own id.'
@@ -864,7 +880,8 @@ export async function recordVisit(
       const [qr] = await db
         .select({ id: qrCodes.id })
         .from(qrCodes)
-        .where(and(eq(qrCodes.code, qrCode), eq(qrCodes.showId, show.id)))
+        .innerJoin(shows, eq(shows.id, qrCodes.showId))
+        .where(and(eq(qrCodes.code, qrCode), eq(shows.galleryId, gallery.id)))
         .limit(1)
       qrCodeId = qr?.id ?? null
     }
@@ -1000,9 +1017,11 @@ export function leadsCsv(rows: LeadCsvRow[]): string {
   return `\uFEFF${lines.join('\r\n')}\r\n`
 }
 
-export async function leadsCsvForSession(db: Db, galleryId: string): Promise<{ status: 200; body: string } | { status: 401; body: { error: string } }> {
+export async function leadsCsvForSession(db: Db, galleryId: string, showId?: string | null): Promise<{ status: 200; body: string } | { status: 401 | 404; body: { error: string } }> {
   const tenant = await tenantById(db, galleryId)
   if (!tenant) return { status: 401, body: { error: 'Sign in to download the leads.' } }
-  const rows = await readLeadList(db, tenant.gallery.id, 10000)
+  const reportShow = await reportShowId(db, tenant, showId)
+  if (!reportShow) return { status: 404, body: { error: 'That show was not found.' } }
+  const rows = await readLeadList(db, tenant.gallery.id, reportShow, 10000)
   return { status: 200, body: leadsCsv(rows) }
 }
