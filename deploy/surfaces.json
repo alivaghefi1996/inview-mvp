@@ -144,6 +144,15 @@
       "screenshot": true
     },
     {
+      "id": "staff-forgot-password",
+      "group": "staff",
+      "label": "Password reset",
+      "labelFa": "بازنشانی رمز عبور",
+      "path": "/staff/forgot-password",
+      "access": "public",
+      "screenshot": true
+    },
+    {
       "id": "dashboard-sign-in",
       "group": "staff",
       "label": "Gallery sign-in",
