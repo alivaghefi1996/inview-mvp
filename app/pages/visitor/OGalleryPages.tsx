@@ -8,6 +8,7 @@ import { formatDateRange, formatNumber, formatSize, formatToman, localDigits } f
 import { WALL_IMAGE_SIZES } from '../../lib/meta'
 import { oCopy, pick, recordWorkView, reportLead, type PilotRecord, type PilotStatus, type PilotWork } from '../../lib/pilot'
 import { useVisitor, visitor } from '../../lib/store'
+import { highFetchPriority } from '../../lib/image-priority'
 
 type Lang = 'en' | 'fa'
 type Filter = 'all' | PilotStatus
@@ -58,7 +59,7 @@ export function WorkImage({
       alt={alt}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
-      {...(priority ? { fetchPriority: 'high' as const } : {})}
+      {...(priority ? highFetchPriority : {})}
     />
   )
   if (!set?.webp) return img
@@ -250,11 +251,13 @@ function WorkWall({
             </Link>
             <Link to={`/g/${slug}/works/${work.id}`} className="label">
               <span className="label-artist" dir="auto">{text.artist || text.title}</span>
-              <span className="label-meta">
-                {meta.length === 0 ? '—' : meta.map((part, i) => (
-                  <span key={i}>{i > 0 ? ' · ' : null}<bdi className="bidi-plain">{part}</bdi></span>
-                ))}
-              </span>
+              {meta.length > 0 && (
+                <span className="label-meta">
+                  {meta.map((part, i) => (
+                    <span key={i}>{i > 0 ? ' · ' : null}<bdi className="bidi-plain">{part}</bdi></span>
+                  ))}
+                </span>
+              )}
               <span className="label-row">
                 {work.status !== 'sold' && <span className="label-price"><WorkPrice work={work} /></span>}
                 <StatusLabel status={work.status} />
@@ -424,7 +427,6 @@ export function OWork({ work, record }: { work: PilotWork; record: PilotRecord }
       <div className="pad actions">
         <button
           className={`btn ${isSaved ? 'btn-quiet' : 'btn-primary'}`}
-          aria-pressed={isSaved}
           onClick={() => {
             if (isSaved) visitor.toggleSaved(work.id)
             else if (phone && consentVersion === CONSENT_TEXT_VERSION) { visitor.save(work.id); reportLead(slug, phone, 'save', work.id) }
@@ -433,8 +435,9 @@ export function OWork({ work, record }: { work: PilotWork; record: PilotRecord }
           {isSaved ? t.saved : t.save}
         </button>
         {work.status !== 'sold' && (
-          <button className="btn btn-outline" disabled={asked}
+          <button className={`btn btn-outline ${asked ? 'is-done' : ''}`} aria-disabled={asked || undefined}
             onClick={() => {
+              if (asked) return
               if (phone && consentVersion === CONSENT_TEXT_VERSION) { setAsked(true); reportLead(slug, phone, 'ask', work.id) }
               else requireSignIn('ask', () => setAsked(true), text.title, work.id)
             }}>

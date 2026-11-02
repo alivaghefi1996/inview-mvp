@@ -87,6 +87,8 @@ jobs:
             -e DATABASE_URL -e O_GALLERY_ACCESS_CODE -e PUBLIC_APP_URL \
             mcr.microsoft.com/playwright:v1.64.1-noble \
             npx playwright test visual
+      # Only this image renders the baselines, so a branch that changes the UI can refresh
+      # them from this artifact.
       - name: Upload the rendered screenshots when the comparison fails
         if: failure() && steps.visual.conclusion == 'failure'
         uses: actions/upload-artifact@v4
