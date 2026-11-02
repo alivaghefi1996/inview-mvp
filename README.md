@@ -4,7 +4,7 @@ Inview gives art galleries a visitor app, a price list and a gallery website.
 A visitor scans a QR code at a show. The visitor sees the works and the prices on a mobile phone.
 
 This repository holds the O Gallery pilot and the multi-tenant base.
-See `docs/adr/0001-architecture.md` for the architecture decisions.
+See `docs/adr/0001-architecture.md` in `m-esm/inview-docs` for the architecture decisions.
 
 ## What you get
 
