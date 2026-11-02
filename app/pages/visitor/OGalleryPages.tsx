@@ -1,10 +1,11 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { EmptyState } from '../../components/EmptyState'
 import { useSignIn } from '../../components/VisitorShell'
 import { useT } from '../../lib/i18n'
 import { CONSENT_TEXT_VERSION } from '../../lib/consent'
 import { formatDateRange, formatNumber, formatSize, formatToman, localDigits } from '../../lib/format'
+import { WALL_IMAGE_SIZES } from '../../lib/meta'
 import { oCopy, pick, recordWorkView, reportLead, type PilotRecord, type PilotStatus, type PilotWork } from '../../lib/pilot'
 import { useVisitor, visitor } from '../../lib/store'
 import { highFetchPriority } from '../../lib/image-priority'
@@ -13,6 +14,8 @@ type Lang = 'en' | 'fa'
 type Filter = 'all' | PilotStatus
 
 const FILTERS: Filter[] = ['all', 'available', 'reserved', 'sold']
+const FIRST_SCREEN_CARDS = 4
+const DEFERRED_IMAGE_MARGIN = '600px 0px'
 
 function showTitle(record: PilotRecord, lang: Lang) {
   return pick(lang, record.showTitle, record.showTitleFa)
@@ -65,6 +68,28 @@ export function WorkImage({
       <source type="image/webp" srcSet={set.webp} sizes={sizes} />
       {img}
     </picture>
+  )
+}
+
+function DeferredWorkImage({ work, sizes }: { work: PilotWork; sizes: string }) {
+  const [near, setNear] = useState(false)
+  const slot = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    if (!slot.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setNear(true)
+      },
+      { rootMargin: DEFERRED_IMAGE_MARGIN },
+    )
+    observer.observe(slot.current)
+    return () => observer.disconnect()
+  }, [near])
+  if (near) return <WorkImage work={work} alt="" sizes={sizes} />
+  return (
+    <span ref={slot} className="wall-slot">
+      <noscript><WorkImage work={work} alt="" sizes={sizes} /></noscript>
+    </span>
   )
 }
 
@@ -190,11 +215,13 @@ function WorkWall({
   slug,
   galleryName,
   firstPriority = false,
+  eagerCards = FIRST_SCREEN_CARDS,
 }: {
   works: PilotWork[]
   slug: string
   galleryName: string
   firstPriority?: boolean
+  eagerCards?: number
 }) {
   const { lang } = useT()
   const copy = oCopy(lang, galleryName)
@@ -209,7 +236,9 @@ function WorkWall({
           <article key={work.id} className="card">
             <Link to={`/g/${slug}/works/${work.id}`} className="card-img" title={text.title}>
               {work.image
-                ? <WorkImage work={work} alt="" sizes="(min-width: 960px) 30vw, 50vw" priority={firstPriority && index === 0} />
+                ? index < eagerCards
+                  ? <WorkImage work={work} alt="" sizes={WALL_IMAGE_SIZES} priority={firstPriority && index === 0} />
+                  : <DeferredWorkImage work={work} sizes={WALL_IMAGE_SIZES} />
                 : <span className="pl-fallback wall-fallback" aria-hidden />}
             </Link>
             <Link to={`/g/${slug}/works/${work.id}`} className="label">
@@ -286,7 +315,7 @@ export function OWorks({ record }: { record: PilotRecord }) {
           <div className="pad">
             <h2 className="section-title">{copy.samplesTitle}</h2>
           </div>
-          <WorkWall works={samples} slug={record.slug} galleryName={name} />
+          <WorkWall works={samples} slug={record.slug} galleryName={name} eagerCards={Math.max(FIRST_SCREEN_CARDS - real.length, 0)} />
         </section>
       )}
     </div>

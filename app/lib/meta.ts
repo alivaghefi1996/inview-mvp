@@ -39,6 +39,8 @@ const copy = {
   },
 }
 
+export const WALL_IMAGE_SIZES = '(min-width: 960px) 30vw, calc(50vw - 32px)'
+
 export type PageKind = 'show' | 'works' | 'prices' | 'about' | 'work' | 'website'
 
 export function metaCopy(lang: Lang) {
@@ -170,6 +172,6 @@ export function galleryPageMeta(
   }
   const tags = pageMeta({ lang, origin, path, ...map[kind], image: coverImage(record), noindex: Boolean(record?.demo) })
   if (kind === 'show') tags.push(...preloadImage(coverWork(record), '(min-width: 960px) 55vw, 100vw'))
-  if (kind === 'works') tags.push(...preloadImage(firstWallWork(record), '(min-width: 960px) 30vw, 50vw'))
+  if (kind === 'works') tags.push(...preloadImage(firstWallWork(record), WALL_IMAGE_SIZES))
   return tags
 }

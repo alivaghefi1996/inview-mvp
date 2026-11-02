@@ -733,6 +733,7 @@ p { text-wrap: pretty; }
   object-fit: cover;
   transition: transform 480ms var(--ease-out);
 }
+.wall-slot { display: block; height: 100%; }
 .card:hover .card-img img { transform: scale(1.03); }
 @media (prefers-reduced-motion: reduce) {
   .card:hover .card-img img { transform: none; }

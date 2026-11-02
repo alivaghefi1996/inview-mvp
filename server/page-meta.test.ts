@@ -6,7 +6,7 @@ process.env.NODE_ENV = 'test'
 import { galleryPageMeta } from '../app/lib/meta.ts'
 import type { PilotRecord, PilotWork } from '../app/lib/pilot.ts'
 
-const CARD_SIZES = '(min-width: 960px) 30vw, 50vw'
+const CARD_SIZES = '(min-width: 960px) 30vw, calc(50vw - 32px)'
 const MATCHES = [{ id: 'root', data: { lang: 'en' as const, origin: 'https://inview.test' } }]
 
 function work(id: string, extra: Partial<PilotWork> = {}): PilotWork {

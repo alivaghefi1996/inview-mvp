@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { eq } from 'drizzle-orm'
 import type { AppDatabase } from '../database/context'
 import { auditLogs, galleries, leads, qrCodes, shows, visits, works } from '../database/schema'
-import { createUser } from './accounts'
+import { AccountInputError, createUser } from './accounts'
 import { can, type Principal } from './authz'
 import { verifySecret } from './crypto'
 import { createGallery, galleryProfile, listGalleries, rotateSharedCode, updateGallery } from './ops'
@@ -57,6 +57,27 @@ test('operators create draft galleries atomically, update, rotate hashes and aud
       await assert.rejects(createGallery(db, principal, input), /Forbidden/)
       await assert.rejects(updateGallery(db, principal, result.gallery.id, { nameFa: 'A', nameEn: 'A', status: 'live', notes: '', sharedCodeEnabled: true }), /Forbidden/)
     }
+  } finally { await fixture.close() }
+})
+
+test('createGallery refuses slugs that static staff routes would catch', async () => {
+  const fixture = await createTestDb()
+  const db = fixture.db as unknown as AppDatabase
+  try {
+    const user = await createUser(db, { email: 'admin@example.com', platformRole: 'admin' })
+    const admin: Principal = { kind: 'operator', userId: user.id, platformRole: 'admin' }
+    const input = { nameFa: 'گالری', nameEn: 'Gallery', showTitle: 'Show', ownerIdentifier: 'owner@example.com' }
+    for (const slug of ['style', 'sign-in', 'sign-out', 'invite']) {
+      await assert.rejects(createGallery(db, admin, { ...input, slug }), (error: unknown) => {
+        assert.ok(error instanceof AccountInputError)
+        assert.match(error.message, /Select a different slug/)
+        return true
+      })
+    }
+    assert.equal((await db.select().from(galleries)).length, 0)
+    const accepted = await createGallery(db, admin, { ...input, slug: 'style-house' })
+    assert.equal(accepted.gallery.slug, 'style-house')
+    assert.equal((await db.select().from(galleries)).length, 1)
   } finally { await fixture.close() }
 })
 

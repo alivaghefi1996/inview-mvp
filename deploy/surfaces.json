@@ -168,9 +168,7 @@
       "labelFa": "ورود کارکنان",
       "path": "/staff/sign-in",
       "access": "public",
-      "screenshot": true,
-      "note": "Arrives with the staff area release.",
-      "noteFa": "همراه با انتشار بخش کارکنان در دسترس قرار می‌گیرد."
+      "screenshot": true
     },
     {
       "id": "staff-home",
