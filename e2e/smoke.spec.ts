@@ -95,6 +95,12 @@ test.describe('smoke', () => {
     for (const path of ['/me', '/dashboard', '/staff', '/ops']) {
       expect(body, path).toContain(`Disallow: ${path}`)
     }
+    expect(body).not.toMatch(/Content-Signal/i)
+    for (const crawler of ['GPTBot', 'CCBot', 'ClaudeBot', 'Google-Extended']) {
+      expect(body, crawler).toMatch(
+        new RegExp(`^User-agent: ${crawler}$\\n(User-agent: \\S+\\n)*Disallow: /$`, 'm'),
+      )
+    }
   })
 
   test('health API', async ({ request }) => {
