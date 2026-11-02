@@ -7,6 +7,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useMatches,
   useRouteLoaderData,
 } from 'react-router'
 import type { Route } from './+types/root'
@@ -24,6 +25,8 @@ import fraunces400 from '@fontsource/fraunces/files/fraunces-latin-400-normal.wo
 import fraunces500 from '@fontsource/fraunces/files/fraunces-latin-500-normal.woff2?url'
 import persianFonts from './styles-fa.css?url'
 import './styles.css'
+
+export type SerifHandle = { usesMediumSerif?: (data: unknown) => boolean }
 
 export const links: Route.LinksFunction = () => [
   { rel: 'icon', href: '/icons/favicon.svg', type: 'image/svg+xml' },
@@ -46,6 +49,9 @@ export const meta: Route.MetaFunction = ({ data }) => {
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useRouteLoaderData<typeof loader>('root')
   const persian = data?.lang === 'fa'
+  const page = useMatches().at(-1)
+  const handle = page?.handle as SerifHandle | undefined
+  const mediumSerif = handle?.usesMediumSerif?.(page?.data) ?? true
   return (
     <html lang={data?.lang ?? 'en'} dir={data?.dir ?? 'ltr'}>
       <head>
@@ -59,7 +65,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ) : (
           <>
             <link rel="preload" href={fraunces400} as="font" type="font/woff2" crossOrigin="anonymous" />
-            <link rel="preload" href={fraunces500} as="font" type="font/woff2" crossOrigin="anonymous" />
+            {mediumSerif && <link rel="preload" href={fraunces500} as="font" type="font/woff2" crossOrigin="anonymous" />}
           </>
         )}
       </head>

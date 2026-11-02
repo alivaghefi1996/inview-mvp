@@ -35,6 +35,30 @@ test.describe('sample gallery', () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/g\/sample$/)
   })
 
+  test('the works page starts images below the first screen when the visitor scrolls near them', async ({ page }) => {
+    await useLang(page, 'en')
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/g/sample/works', { waitUntil: 'networkidle' })
+    const cards = page.locator('.o-wall .card')
+    await expect(cards.nth(3).locator('img')).toHaveCount(1)
+    const last = cards.last()
+    await expect(last.locator('img')).toHaveCount(0)
+    const box = await last.locator('.card-img').boundingBox()
+    expect(box?.height).toBeGreaterThan(100)
+    await last.scrollIntoViewIfNeeded()
+    await expect(last.locator('img')).toHaveJSProperty('complete', true)
+    expect(await last.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
+    expect((await last.locator('.card-img').boundingBox())?.height).toBe(box?.height)
+  })
+
+  test('the works page shows every image without JavaScript', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, baseURL })
+    const page = await context.newPage()
+    await page.goto('/g/sample/works')
+    await expect(page.locator('.o-wall .card .card-img img')).toHaveCount(12)
+    await context.close()
+  })
+
   test('the works page lists the sample works and links inside the sample gallery', async ({ page }) => {
     await useLang(page, 'fa')
     await page.goto('/g/sample/works')
