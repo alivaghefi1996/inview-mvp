@@ -12,7 +12,7 @@ import {
   visits,
   works,
 } from '../database/schema'
-import { CONSENT_TEXT_VERSION } from '../app/lib/consent'
+import { CONSENT_STALE_CODE, CONSENT_TEXT_VERSION } from '../app/lib/consent'
 import { parseToman } from '../app/lib/price'
 import {
   GALLERY_TIME_ZONE,
@@ -912,7 +912,7 @@ export async function recordLead(
   workId: string | null | undefined,
   consent: unknown,
   consentTextVersion: unknown,
-): Promise<{ status: number; body: { ok: true } | { error: string } }> {
+): Promise<{ status: number; body: { ok: true } | { error: string; code?: string } }> {
   if (!/^[a-zA-Z0-9-]{8,80}$/.test(visitorId)) {
     return { status: 400, body: { error: 'Visitor id is not valid.' } }
   }
@@ -923,7 +923,7 @@ export async function recordLead(
     return { status: 400, body: { error: 'Consent is required.' } }
   }
   if (consentTextVersion !== CONSENT_TEXT_VERSION) {
-    return { status: 400, body: { error: 'The consent text version is not valid.' } }
+    return { status: 400, body: { error: 'The consent text version is not valid.', code: CONSENT_STALE_CODE } }
   }
   if (!workId || !/^[a-zA-Z0-9-]{8,80}$/.test(workId)) {
     return { status: 400, body: { error: 'A work id is required.' } }

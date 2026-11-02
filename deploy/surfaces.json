@@ -144,6 +144,15 @@
       "screenshot": true
     },
     {
+      "id": "privacy",
+      "group": "visitor-pilot",
+      "label": "Privacy",
+      "labelFa": "حریم خصوصی",
+      "path": "/privacy",
+      "access": "public",
+      "screenshot": true
+    },
+    {
       "id": "dashboard-sign-in",
       "group": "staff",
       "label": "Gallery sign-in",

@@ -1,6 +1,7 @@
 import { pilotSeed as seedJson } from './pilot-seed'
-import { leadBody } from './consent'
+import { CONSENT_STALE_CODE, leadBody } from './consent'
 import { isDatabaseGallery } from './galleries'
+import { visitor } from './store'
 import { QR_CODE_PATTERN, tehranDay } from './tehran-day'
 
 export type PilotStatus = 'available' | 'reserved' | 'sold'
@@ -191,5 +192,9 @@ export function reportLead(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...leadBody({ phone, kind, workId, visitorId: getVisitorId() }), gallery }),
-  }).then(readBody).catch(() => {})
+  }).then(async (res) => {
+    if (res.ok) return readBody(res)
+    const body = (await res.json()) as { code?: string }
+    if (body.code === CONSENT_STALE_CODE) visitor.refuseLead()
+  }).catch(() => {})
 }

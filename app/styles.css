@@ -1260,6 +1260,18 @@ p { text-wrap: pretty; }
   margin: 4px 0 0;
 }
 .privacy svg { flex: none; margin-top: 1px; }
+.consent-stale {
+  margin: 0 16px 14px;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.consent-stale p { margin: 0; }
+.privacy-page { max-width: 680px; margin: 0 auto; }
 
 @media (min-width: 720px) {
   .sheet-backdrop { align-items: center; padding: 24px; }
@@ -2468,6 +2480,10 @@ td {
 .ops-team { display: grid; gap: 24px; margin-top: 40px; }
 .ops-member { border-top: 1px solid var(--line-strong); padding-top: 24px; }
 .ops-member select { max-width: 320px; }
+.ops-lead-delete { margin-top: 16px; }
+.ops-lead-delete summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+.ops-lead-delete form { max-width: 680px; display: grid; gap: 16px; margin-top: 12px; }
+.ops-lead-delete .btn { justify-self: start; }
 .ops-actions { margin-top: 20px; }
 .ops-skip { position: absolute; transform: translateY(-150%); padding: 12px; background: var(--surface); z-index: 10; }
 .ops-skip:focus { transform: translateY(0); }

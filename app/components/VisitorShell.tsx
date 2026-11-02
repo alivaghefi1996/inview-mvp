@@ -19,7 +19,7 @@ export const useSignIn = () => useContext(SignInCtx)
 
 export function VisitorShell() {
   const { t, lang, dir, galleryName } = useT()
-  const { phone, consentVersion, lastGallery } = useVisitor()
+  const { phone, consentVersion, lastGallery, leadRefused } = useVisitor()
   const [pending, setPending] = useState<{ kind: SheetKind; action: () => void; subtitle?: string; workId?: string } | null>(null)
   const { pathname } = useLocation()
   const busy = useNavigation().state !== 'idle'
@@ -97,6 +97,12 @@ export function VisitorShell() {
             {navItems.map((item) => <NavLink key={item.to} to={item.to} end={item.end}>{item.label}</NavLink>)}
           </nav>
           {demo && !isPrices && <p className="demo-banner" role="note">{demoCopy.demoNote}</p>}
+          {leadRefused && (
+            <div className="consent-stale" role="alert">
+              <p>{t.consentStale}</p>
+              <button type="button" className="btn btn-outline" onClick={() => window.location.reload()}>{t.reload}</button>
+            </div>
+          )}
           <main id="main" tabIndex={-1} className="v-main" aria-busy={busy || undefined}><Outlet /></main>
           <nav className="v-tabs" aria-label={t.visitorNav}>
             {navItems.map((item) => <NavLink key={item.to} to={item.to} end={item.end}>{item.icon}<span>{item.label}</span></NavLink>)}
