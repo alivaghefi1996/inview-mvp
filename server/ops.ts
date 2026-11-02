@@ -13,7 +13,7 @@ export function requireOperator(principal: Principal | null) {
 }
 
 function requiredText(value: string, max: number) {
-  if (typeof value !== 'string' || !value.trim() || value.length > max) throw new AccountInputError('Check the required fields and their lengths.')
+  if (typeof value !== 'string' || !value.trim() || value.length > max) throw new AccountInputError('Check the required fields and their lengths.', 'ورودی‌ها را بررسی کنید.')
   return value.trim()
 }
 
@@ -64,15 +64,15 @@ export async function createGallery(db: AccountDb, principal: Principal | null, 
   slug: string; nameFa: string; nameEn: string; showTitle: string; ownerIdentifier: string
 }) {
   const actor = requireOperator(principal)
-  if (!/^[a-z0-9-]{3,40}$/.test(input.slug)) throw new AccountInputError('Use 3 to 40 lowercase letters, digits or hyphens for the slug.')
-  if (reservedSlugs.has(input.slug)) throw new AccountInputError('This slug matches a staff page. Select a different slug.')
+  if (!/^[a-z0-9-]{3,40}$/.test(input.slug)) throw new AccountInputError('Use 3 to 40 lowercase letters, digits or hyphens for the slug.', 'برای نشانی فقط حروف کوچک، رقم یا خط تیره، بین ۳ تا ۴۰ نویسه وارد کنید.')
+  if (reservedSlugs.has(input.slug)) throw new AccountInputError('This slug matches a staff page. Select a different slug.', 'این نشانی با صفحه کارکنان تداخل دارد. نشانی دیگری انتخاب کنید.')
   const nameFa = requiredText(input.nameFa, 80)
   const nameEn = requiredText(input.nameEn, 80)
   const showTitle = requiredText(input.showTitle, 160)
   return db.transaction(async (tx) => {
     const [gallery] = await tx.insert(galleries).values({ slug: input.slug, nameFa, nameEn, status: 'draft' })
       .onConflictDoNothing({ target: galleries.slug }).returning(profileColumns)
-    if (!gallery) throw new AccountInputError('This slug is already in use.')
+    if (!gallery) throw new AccountInputError('This slug is already in use.', 'این نشانی از قبل استفاده می‌شود.')
     const [show] = await tx.insert(shows).values({ galleryId: gallery.id, titleFa: showTitle, titleEn: showTitle, status: 'draft' }).returning({ id: shows.id })
     await tx.insert(qrCodes).values({ showId: show.id, code: `${gallery.slug}-main`, label: 'Main' })
     const invite = await inviteStaff(tx, actor, gallery.id, 'owner', input.ownerIdentifier)

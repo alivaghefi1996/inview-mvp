@@ -11,7 +11,13 @@ export type AccountDb = Pick<AppDatabase, 'select' | 'insert' | 'update' | 'dele
 export const USER_COOKIE = 'inview_session'
 const DUMMY_HASH = hashSecret(randomToken())
 
-export class AccountInputError extends Error {}
+export class AccountInputError extends Error {
+  messageFa?: string
+  constructor(message: string, messageFa?: string) {
+    super(message)
+    this.messageFa = messageFa
+  }
+}
 
 export function normalizePhone(value: string): string {
   return value.trim().replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 1776))
