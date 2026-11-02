@@ -8,6 +8,7 @@ import {
   tenantById,
   GALLERY_SLUG_PATTERN,
   GALLERY_NOT_FOUND,
+  isPublicTenant,
   publishGalleryRecordForSession,
   readStaffReportForSession,
 } from './gallery-record'
@@ -332,7 +333,7 @@ export async function runPilotRequest(
     if (blocked) return blocked
   } else if (verb === 'POST' && (payload.op === 'visit' || payload.op === 'lead')) {
     const tenant = await tenantBySlug(db, gallerySlug)
-    if (!tenant || tenant.gallery.status !== 'live') return GALLERY_NOT_FOUND
+    if (!isPublicTenant(tenant)) return GALLERY_NOT_FOUND
     const blocked = await beforeEvent(db, payload.op, gallerySlugOf(payload), ip, payload.visitorId, now, config)
     if (blocked) return blocked
   }

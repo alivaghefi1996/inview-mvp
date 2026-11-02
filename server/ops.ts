@@ -94,10 +94,26 @@ export async function updateGallery(db: AccountDb, principal: Principal | null, 
     const [before] = await tx.select(profileColumns).from(galleries).where(eq(galleries.id, galleryId)).for('update').limit(1)
     if (!before) throw new AccountInputError('Gallery not found.')
     const [gallery] = await tx.update(galleries).set({ nameFa, nameEn, status: input.status, notes: input.notes, sharedCodeEnabled: input.sharedCodeEnabled, updatedAt: new Date() }).where(eq(galleries.id, galleryId)).returning(profileColumns)
+    const publishedShowId = input.status === 'live' ? await publishNewestDraftShow(tx, galleryId) : null
     await writeAudit(tx, { actorUserId: actor.userId, galleryId, action: 'gallery-update', targetType: 'gallery', targetId: galleryId,
-      summary: { before: { status: before.status, sharedCodeEnabled: before.sharedCodeEnabled }, after: { status: gallery.status, sharedCodeEnabled: gallery.sharedCodeEnabled } } })
+      summary: { before: { status: before.status, sharedCodeEnabled: before.sharedCodeEnabled }, after: { status: gallery.status, sharedCodeEnabled: gallery.sharedCodeEnabled }, publishedShowId } })
     return gallery
   })
+}
+
+/**
+ * A live gallery serves a published show only, so going live publishes the newest draft show.
+ * A gallery that already has a published show keeps it. An archived show stays archived.
+ */
+async function publishNewestDraftShow(tx: AccountDb, galleryId: string): Promise<string | null> {
+  const [published] = await tx.select({ id: shows.id }).from(shows)
+    .where(and(eq(shows.galleryId, galleryId), eq(shows.status, 'published'))).limit(1)
+  if (published) return null
+  const [draft] = await tx.select({ id: shows.id }).from(shows)
+    .where(and(eq(shows.galleryId, galleryId), eq(shows.status, 'draft'))).orderBy(desc(shows.updatedAt)).limit(1)
+  if (!draft) return null
+  await tx.update(shows).set({ status: 'published', updatedAt: new Date() }).where(eq(shows.id, draft.id))
+  return draft.id
 }
 
 export async function rotateSharedCode(db: AccountDb, principal: Principal | null, galleryId: string) {
