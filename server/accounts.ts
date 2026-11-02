@@ -1,10 +1,11 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { AppDatabase } from '../database/context'
 import { memberships, sessions, users } from '../database/schema'
 import { writeAudit } from './audit'
 import { hashSecret, randomToken, sha256, verifySecret } from './crypto'
 import { consumeBucket, hashClientAddress, peekBucket, rateLimitConfig, tooMany } from './rate-limit'
 import type { ApiResult } from './rate-limit'
+import { normalizePhone, phoneLookupForms, validPhone } from './phone'
 import { readCookie } from './staff-session'
 
 export type AccountDb = Pick<AppDatabase, 'select' | 'insert' | 'update' | 'delete' | 'transaction'>
@@ -19,11 +20,7 @@ export class AccountInputError extends Error {
   }
 }
 
-export function normalizePhone(value: string): string {
-  return value.trim().replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 1776))
-    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 1632))
-    .replace(/^(\+98|0098)/, '0')
-}
+export { normalizePhone }
 
 export function passwordHash(password: string): string {
   if (typeof password !== 'string' || password.length < 10 || password.length > 1024) {
@@ -51,7 +48,7 @@ export async function createUser(
   const phone = input.phone ? normalizePhone(input.phone) || null : null
   if (!email && !phone) throw new AccountInputError('An email or phone number is required.')
   if ((email && (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))
-    || (phone && (phone.length > 20 || !/^\+?[0-9]{7,20}$/.test(phone)))) {
+    || (phone && !validPhone(phone))) {
     throw new AccountInputError('Enter a valid email or phone number.')
   }
   const [user] = await db.insert(users).values({
@@ -101,7 +98,7 @@ export async function signIn(
   const client = await peekBucket(db, clientKey, config.accessFailIpMax, config.accessFailIpWindowSec, now)
   if (client) return { ok: false, result: client }
   const [user] = await db.select().from(users)
-    .where(identifier.includes('@') ? sql`lower(${users.email}) = ${identifier}` : eq(users.phone, identifier)).limit(1)
+    .where(identifier.includes('@') ? sql`lower(${users.email}) = ${identifier}` : inArray(users.phone, phoneLookupForms(identifier))).limit(1)
   const accountKey = `user-sign-in:account:${sha256(user?.id ?? identifier)}`
   const account = await peekBucket(db, accountKey,
     config.accessFailGalleryMax, config.accessFailGalleryWindowSec, now)

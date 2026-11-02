@@ -572,7 +572,7 @@ export async function seedSample({ sql, storage, env = process.env, now = new Da
       const at = new Date(now.getTime() - lead.daysAgo * day - 3 * 60 * 60 * 1000)
       await tx`
         INSERT INTO leads (gallery_id, show_id, work_id, phone, kind, consent_at, consent_text_version, created_at)
-        VALUES (${galleryId}, ${show.id}, ${lead.work}, ${`0912${PHONE_SUFFIXES[lead.phone]}`}, ${lead.kind}, ${at},
+        VALUES (${galleryId}, ${show.id}, ${lead.work}, ${`+98912${PHONE_SUFFIXES[lead.phone]}`}, ${lead.kind}, ${at},
           ${CONSENT_TEXT_VERSION}, ${at})`
     }
 

@@ -12,5 +12,6 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   use: {
     baseURL,
+    timezoneId: 'Asia/Tehran',
   },
 })

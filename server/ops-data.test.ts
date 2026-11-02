@@ -1,4 +1,5 @@
 import test from 'node:test'
+import { maskPhone } from './phone'
 import assert from 'node:assert/strict'
 import { eq } from 'drizzle-orm'
 import { DatabaseContext, type AppDatabase } from '../database/context'
@@ -6,7 +7,7 @@ import { auditLogs, galleries, leads, qrCodes, shows, visits, works } from '../d
 import { createUser, createUserSession } from './accounts'
 import type { Principal } from './authz'
 import { createTestDb } from './test-db'
-import { createGalleryQr, exportGalleryLeads, galleryActivity, galleryLeads, galleryQrCodes, galleryQrSvg, maskPhone, requireLeadExport, revealLeadPhone } from './ops-data'
+import { createGalleryQr, exportGalleryLeads, galleryActivity, galleryLeads, galleryQrCodes, galleryQrSvg, requireLeadExport, revealLeadPhone } from './ops-data'
 import { ensureOGalleryTenant } from './gallery-bootstrap'
 import { leadsCsvForSession } from './gallery-record'
 import { loader as csvLoader } from '../app/routes/ops.galleries.leads-csv'
@@ -52,7 +53,7 @@ test('lead downloads require admin, isolate galleries, match the staff CSV and w
       assert.ok(csv.startsWith('\uFEFFcreated_at_utc_iso,created_at_tehran_gregorian,created_at_tehran_jalali,kind,phone,work_id,work_title,consent_text_version,verified\r\n'))
       assert.ok(csv.includes('"\'=HYPERLINK(""x"")"'))
       assert.ok(csv.includes('"Harbour, light"'))
-      assert.ok(csv.includes('2026-10-30T10:00:00.000Z,2026-10-30 13:30,1405-08-08 13:30,ask,09120000009,,,v1,no\r\n'))
+      assert.ok(csv.includes('2026-10-30T10:00:00.000Z,2026-10-30 13:30,1405-08-08 13:30,ask,+989120000009,,,v1,no\r\n'))
       assert.ok(!csv.includes('09129999999'))
       assert.ok(!csv.includes('Other gallery private title'))
       const [audit] = await db.select().from(auditLogs).where(eq(auditLogs.action, 'leads-export'))
@@ -63,8 +64,8 @@ test('lead downloads require admin, isolate galleries, match the staff CSV and w
       const otherResult = await csvLoader(args(adminSession.cookie, other.slug))
       assert.ok(otherResult instanceof Response)
       const otherCsv = await otherResult.text()
-      assert.ok(otherCsv.includes('09129999999'))
-      assert.ok(!otherCsv.includes('09120000000'))
+      assert.ok(otherCsv.includes('+989129999999'))
+      assert.ok(!otherCsv.includes('+989120000000'))
     })
   } finally { await fixture.close() }
 })
@@ -93,7 +94,7 @@ test('lead exports cap the latest gallery rows at 10000 and do not join another 
 })
 
 test('phone masking keeps only the prefix and last two digits', () => {
-  assert.equal(maskPhone('09121234534'), '0912•••••34')
+  assert.equal(maskPhone('09121234534'), '+98912•••••34')
   assert.equal(maskPhone('123'), '•••')
   assert.equal(maskPhone(''), '')
 })
@@ -110,7 +111,7 @@ test('gallery data is isolated, phone reveal is audited and operator administrat
       const [gallery] = await db.insert(galleries).values({ slug, nameEn: slug, nameFa: slug }).returning()
       const [show] = await db.insert(shows).values({ galleryId: gallery.id }).returning()
       await db.insert(works).values({ id: slug, galleryId: gallery.id, title: slug })
-      const [lead] = await db.insert(leads).values({ galleryId: gallery.id, showId: show.id, workId: slug, phone: slug === 'alpha' ? '09121234534' : '09129999999', kind: 'ask', consentAt: new Date(), consentTextVersion: 'v1' }).returning()
+      const [lead] = await db.insert(leads).values({ galleryId: gallery.id, showId: show.id, workId: slug, phone: slug === 'alpha' ? '+989121234534' : '+989129999999', kind: 'ask', consentAt: new Date(), consentTextVersion: 'v1' }).returning()
       const qr = await createGalleryQr(db, support, gallery.id, slug, `${slug}-qr`)
       await db.insert(visits).values([
         { showId: show.id, qrCodeId: qr.id, kind: 'scan', visitorId: slug, day: '2026-10-01', createdAt: new Date('2026-11-01T20:30:00Z') },

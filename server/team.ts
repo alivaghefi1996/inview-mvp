@@ -1,6 +1,7 @@
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql, inArray } from 'drizzle-orm'
 import { galleries, memberships, sessions, users } from '../database/schema'
 import { AccountInputError, createUser, normalizePhone, type AccountDb } from './accounts'
+import { phoneLookupForms } from './phone'
 import { writeAudit } from './audit'
 import { can, type MembershipRole, type Principal } from './authz'
 import { createInvite } from './invitations'
@@ -32,7 +33,7 @@ export async function inviteStaff(db: AccountDb, principal: Principal | null, ga
   const phone = email ? null : normalizePhone(identifier)
   return db.transaction(async (tx) => {
     const [existing] = await tx.select({ id: users.id }).from(users)
-      .where(email ? sql`lower(${users.email}) = ${email}` : eq(users.phone, phone!)).limit(1)
+      .where(email ? sql`lower(${users.email}) = ${email}` : inArray(users.phone, phoneLookupForms(phone!))).limit(1)
     if (existing) throw new AccountInputError('This account already exists. Use a different identifier.')
     const user = await createUser(tx, { email, phone, status: 'invited' })
     const invite = await createInvite(tx, { kind: 'staff', galleryId, userId: user.id, role, createdBy: actor.userId })

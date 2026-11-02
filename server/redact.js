@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-const PHONE = /(?:\+98|0098|0)9\d{9}/g
+const PHONE = /(?:\+98|0098|0)9\d{9}|(?:\+|%2[Bb])[1-9]\d{6,14}|\b00[1-9]\d{6,14}\b/g
 const SECRET_FIELD =
   /((?:access[_-]?code|password|otp|phone|token|secret)["']?\s*[:=]\s*["']?)[^"',\s}&]+/gi
 

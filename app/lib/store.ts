@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { canonicalPhone } from './phone'
 
 // Demo only: everything is kept in this browser. Nothing is sent anywhere.
 export interface VisitorState {
@@ -24,7 +25,9 @@ function load(): VisitorState {
   if (typeof window === 'undefined') return empty
   try {
     const raw = localStorage.getItem(KEY)
-    return raw ? { ...empty, ...JSON.parse(raw) } : empty
+    if (!raw) return empty
+    const stored: VisitorState = { ...empty, ...JSON.parse(raw) }
+    return { ...stored, phone: stored.phone ? canonicalPhone(stored.phone) : null }
   } catch {
     return empty
   }
@@ -72,11 +75,4 @@ export const visitor = {
   toggleFollow: (artist: string) => set({ follows: toggle(state.follows, artist) }),
   stamp: (slug: string) => !state.stamps.includes(slug) && set({ stamps: [...state.stamps, slug] }),
   reset: () => set({ ...empty }),
-}
-
-// Iranian mobile numbers: 09xxxxxxxxx (also accepts Persian digits and +98)
-export function normalizePhone(input: string): string | null {
-  const latin = input.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[\s-]/g, '')
-  const local = latin.startsWith('+98') ? '0' + latin.slice(3) : latin.startsWith('98') ? '0' + latin.slice(2) : latin
-  return /^09\d{9}$/.test(local) ? local : null
 }

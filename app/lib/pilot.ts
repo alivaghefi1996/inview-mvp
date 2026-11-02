@@ -1,4 +1,5 @@
 import { pilotSeed as seedJson } from './pilot-seed'
+import { INVALID_PHONE_CODE } from './phone'
 import { leadBody } from './consent'
 import { isDatabaseGallery } from './galleries'
 import { QR_CODE_PATTERN, tehranDay } from './tehran-day'
@@ -177,12 +178,15 @@ export function reportLead(
   phone: string,
   kind: 'save' | 'ask' | 'follow' | 'stamp',
   workId?: string,
-) {
-  if (kind !== 'save' && kind !== 'ask') return
-  if (!workId || !gallery || !isDatabaseGallery(gallery)) return
-  void fetch('/api/v1/pilot', {
+): Promise<'sent' | 'bad-phone'> {
+  if (kind !== 'save' && kind !== 'ask') return Promise.resolve('sent')
+  if (!workId || !gallery || !isDatabaseGallery(gallery)) return Promise.resolve('sent')
+  return fetch('/api/v1/pilot', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...leadBody({ phone, kind, workId, visitorId: getVisitorId() }), gallery }),
-  }).then(readBody).catch(() => {})
+  }).then(async (res) => {
+    const body: { code?: string } = await res.json().catch(() => ({}))
+    return res.status === 400 && body.code === INVALID_PHONE_CODE ? 'bad-phone' as const : 'sent' as const
+  }).catch(() => 'sent' as const)
 }

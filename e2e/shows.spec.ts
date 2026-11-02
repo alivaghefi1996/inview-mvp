@@ -137,7 +137,7 @@ test('one QR code opens show A, then show B, and each show keeps its own counts'
   await test.step('each report has separate counts, and the archived report stays open', async () => {
     await page.goto(`/staff/${owner.slug}/report`)
     await expectTotals(page, '2', '2')
-    await expect(page.getByText('09120000101')).toHaveCount(0)
+    await expect(page.getByText('+989120000101')).toHaveCount(0)
 
     await page.goto(`/staff/${owner.slug}/shows`)
     const archived = page.locator('.show-row-archived')
@@ -145,10 +145,10 @@ test('one QR code opens show A, then show B, and each show keeps its own counts'
     await archived.getByRole('link', { name: /^Open report/ }).click()
     await expect(page).toHaveURL(/report\?show=/)
     await expectTotals(page, '3', '1')
-    await expect(page.getByText('09120000102')).toHaveCount(0)
+    await expect(page.getByText('+989120000102')).toHaveCount(0)
     const csv = await page.request.get(new URL(await page.getByRole('link', { name: 'Download CSV' }).getAttribute('href') ?? '', origin).href)
-    expect(await csv.text()).toContain('09120000101')
-    expect(await csv.text()).not.toContain('09120000102')
+    expect(await csv.text()).toContain('+989120000101')
+    expect(await csv.text()).not.toContain('+989120000102')
   })
 
   await test.step('the staff QR page still lists the printed code, with all its scans', async () => {

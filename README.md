@@ -128,6 +128,10 @@ pull request. A push to `main` (or a sync from `pilot-o-gallery`) also pushes
 automation. A push to `pilot-o-gallery` fast-forwards `main`, or opens and
 merges a sync pull request when a fast-forward is not possible.
 
+## Phone numbers
+
+The server stores new numbers as E.164. `app/lib/phone-data.generated.ts` holds the dial codes, mobile lengths and time zones. `npm run gen:phone-data` writes it from `libphonenumber-js` and `countries-and-timezones`, and `server/phone.test.ts` fails when the file drifts. The browser loads that file only when a phone field mounts. Only the server loads `libphonenumber-js`.
+
 ## Environment
 
 | Name | Purpose |
@@ -137,7 +141,7 @@ merges a sync pull request when a fast-forward is not possible.
 | `O_GALLERY_ACCESS_CODE` | Access code for O Gallery. Required in production when no saved hash exists. The server stores only a scrypt hash. |
 | `MEDIA_DIR` | Local media folder when S3 is not set |
 | `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_HOST` | Garage / S3 |
-| `KAVENEGAR_API_KEY`, `KAVENEGAR_SENDER` | SMS OTP (optional; console provider is the default) |
+| `PLIVO_AUTH_ID`, `PLIVO_AUTH_TOKEN`, `PLIVO_SRC` | General SMS provider for `server/sms-router.ts`. Nothing sends SMS yet. Development uses the console provider when these are unset. Production refuses to build the router without them. |
 | `RATE_LIMIT_*` | Rate-limit salt, counts and windows. The server does not store the address. See [Rate limits](#rate-limits) for each variable. |
 | `S3_PUBLIC_BASE` | Public origin plus the bucket path. Production: `https://inview-media.moshes.io/inview` |
 | `S3_OBJECT_PREFIX` | Object key prefix the media route can serve. Production: `u` |

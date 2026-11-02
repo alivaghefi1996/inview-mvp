@@ -3,11 +3,14 @@ import { useLocation } from 'react-router'
 import { CONSENT_TEXT_VERSION } from '../lib/consent'
 import { DEMO_SLUG } from '../lib/galleries'
 import { gallerySlugFromPath, reportLead } from '../lib/pilot'
-import { normalizePhone, visitor } from '../lib/store'
+import { visitor } from '../lib/store'
 import { useT } from '../lib/i18n'
 import { Heart, Lock } from './Icons'
+import { EMPTY_PHONE, PhoneInput, type PhoneValue } from './PhoneInput'
 
 export type SheetKind = 'save' | 'ask' | 'follow' | 'stamp'
+
+const LEAD_WAIT_MS = 3000
 
 interface Props {
   kind: SheetKind
@@ -18,11 +21,12 @@ interface Props {
 }
 
 export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) {
-  const { t, dir } = useT()
+  const { t, dir, lang } = useT()
   const gallerySlug = gallerySlugFromPath(useLocation().pathname)
   const isDemo = gallerySlug === DEMO_SLUG
   const [step, setStep] = useState<'phone' | 'code'>('phone')
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState<PhoneValue>(EMPTY_PHONE)
+  const [sending, setSending] = useState(false)
   const [code, setCode] = useState('')
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
@@ -64,12 +68,10 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
 
   function submitPhone(e: React.FormEvent) {
     e.preventDefault()
-    const p = normalizePhone(phone)
-    if (!p) return setError(t.badPhone)
+    if (!phone.e164) return setError(t.badPhone)
     if (!agreeOrExplain()) return
     setError('')
-    if (!isDemo) return finish(p)
-    setPhone(p)
+    if (!isDemo) return void finish(phone.e164)
     setStep('code')
   }
 
@@ -78,12 +80,20 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
     const c = code.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
     if (!/^\d{4}$/.test(c)) return setError(t.badCode)
     if (!agreeOrExplain()) return
-    finish(phone)
+    if (phone.e164) void finish(phone.e164)
   }
 
-  function finish(normalized: string) {
-    visitor.signIn(normalized, CONSENT_TEXT_VERSION)
-    reportLead(gallerySlug, normalized, kind, workId)
+  async function finish(e164: string) {
+    if (sending) return
+    setSending(true)
+    const lead = reportLead(gallerySlug, e164, kind, workId)
+    const waited = new Promise<'sent'>((resolve) => setTimeout(() => resolve('sent'), LEAD_WAIT_MS))
+    if (await Promise.race([lead, waited]) === 'bad-phone') {
+      setSending(false)
+      setError(t.badPhone)
+      return
+    }
+    visitor.signIn(e164, CONSENT_TEXT_VERSION)
     onDone()
   }
 
@@ -107,11 +117,18 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
         {step === 'phone' ? (
           <form onSubmit={submitPhone} className="sheet-form" noValidate>
             <label htmlFor="phone">{t.mobile}</label>
-            <input id="phone" ref={inputRef} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" placeholder="0912 345 6789"
-              value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={!!error} aria-describedby={error ? 'sheet-error' : undefined} />
+            <PhoneInput
+              id="phone"
+              lang={lang}
+              labels={{ country: t.phoneCountry, search: t.phoneSearch, searchClose: t.phoneSearchClose, noMatch: t.phoneNoMatch }}
+              inputRef={inputRef}
+              invalid={error === t.badPhone}
+              describedBy={error ? 'sheet-error' : undefined}
+              onChange={setPhone}
+            />
             <ConsentField checked={consent} label={t.consent} invalid={error === t.needConsent} describedBy={error ? 'sheet-error' : undefined} onChange={onConsent} />
             {error && <p id="sheet-error" className="error" role="alert">{error}</p>}
-            <button className="btn btn-primary" type="submit">{isDemo ? t.sendCode : t.confirm}</button>
+            <button className="btn btn-primary" type="submit" disabled={sending}>{isDemo ? t.sendCode : t.confirm}</button>
           </form>
         ) : (
           <form onSubmit={submitCode} className="sheet-form" noValidate>
@@ -120,7 +137,7 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
               value={code} onChange={(e) => setCode(e.target.value)} aria-invalid={!!error} aria-describedby="sheet-error" className="code-input" />
             <ConsentField checked={consent} label={t.consent} invalid={error === t.needConsent} describedBy="sheet-error" onChange={onConsent} />
             <p id="sheet-error" className={error ? 'error' : 'muted small'} role={error ? 'alert' : undefined}>{error || t.codeHint}</p>
-            <button className="btn btn-primary" type="submit">{t.confirm}</button>
+            <button className="btn btn-primary" type="submit" disabled={sending}>{t.confirm}</button>
           </form>
         )}
         <p className="privacy"><Lock size={16} />{t.privacy}</p>

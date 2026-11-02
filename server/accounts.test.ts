@@ -8,15 +8,15 @@ import { sha256 } from './crypto'
 import { rateLimitConfig } from './rate-limit'
 import { createTestDb } from './test-db'
 
-test('phone normalization covers Persian and Arabic digits and Iranian prefixes', async () => {
+test('phone normalization turns Persian and Arabic digits and Iranian prefixes into E.164', async () => {
   for (const phone of ['۰۹۱۲۳۴۵۶۷۸۹', '٠٩١٢٣٤٥٦٧٨٩', '+۹۸۹۱۲۳۴۵۶۷۸۹', '۰۰۹۸۹۱۲۳۴۵۶۷۸۹', ' 09123456789 ']) {
-    assert.equal(normalizePhone(phone), '09123456789')
+    assert.equal(normalizePhone(phone), '+989123456789')
   }
   const fixture = await createTestDb()
   const db = fixture.db as unknown as AppDatabase
   try {
     const user = await createUser(db, { phone: '+۹۸۹۱۲۳۴۵۶۷۸۹', password: 'long-password' })
-    assert.equal(user.phone, '09123456789')
+    assert.equal(user.phone, '+989123456789')
     assert.ok((await signIn(db, { identifier: '٠٠٩٨٩١٢٣٤٥٦٧٨٩', password: 'long-password', ip: 'one', secure: false })).ok)
   } finally { await fixture.close() }
 })

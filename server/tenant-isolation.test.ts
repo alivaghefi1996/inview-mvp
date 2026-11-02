@@ -50,7 +50,7 @@ async function fixture() {
     const [qr] = await db.insert(qrCodes).values({ showId: show.id, code: `${slug}-qr` }).returning()
     const tenant = (await tenantById(db, gallery.id))!
     const visitorId = `${slug}-visitor`
-    const phone = `0912000000${index}`
+    const phone = `+98912000000${index}`
     assert.equal((await recordVisit(db, tenant, 'scan', visitorId, null, qr.code)).status, 200)
     assert.equal((await recordVisit(db, tenant, 'view', visitorId, workId)).status, 200)
     assert.equal((await recordLead(db, tenant, phone, 'ask', visitorId, workId, true, CONSENT_TEXT_VERSION)).status, 200)
@@ -187,7 +187,7 @@ for (const index of [0, 1]) {
         assert.equal(staffRecord.status, allowedRead ? 200 : expectedDenied, `${role} record`)
         if (allowedRead) assert.equal(staffRecord.body.record.slug, slug)
         if (allowedRead) {
-          const expectedPhone = role === 'support' ? `${own.phone.slice(0, 4)}•••••${own.phone.slice(-2)}` : role === 'viewer' || role === 'shared' ? '' : own.phone
+          const expectedPhone = role === 'support' ? `${own.phone.slice(0, 6)}•••••${own.phone.slice(-2)}` : role === 'viewer' || role === 'shared' ? '' : own.phone
           assert.equal(report.body.leads[0].phone, expectedPhone)
           assert.equal(JSON.stringify(report.body).includes(other.phone), false)
           assert.equal(JSON.stringify(report.body).includes(other.workId), false)

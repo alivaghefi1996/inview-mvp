@@ -48,7 +48,7 @@ export default function Profile() {
         <span className="avatar" aria-hidden>{phone.slice(-2)}</span>
         <div>
           <h1 className="page-title no-m">{t.profile}</h1>
-          <p className="muted small" dir="ltr">{phone.replace(/(\d{4})(\d{3})(\d{4})/, '$1 $2 $3')}</p>
+          <p className="muted small" dir="ltr">{phone}</p>
         </div>
       </div>
       <div className="stats pad">

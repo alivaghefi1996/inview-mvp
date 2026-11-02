@@ -182,7 +182,7 @@ test('O Gallery publish, scan dedupe, view and lead use the multi-tenant tables'
     }
     assert.equal(staffBody.visits.scans, 2)
     assert.equal(staffBody.visits.views, 1)
-    assert.equal(staffBody.leads[0].phone, phone)
+    assert.equal(staffBody.leads[0].phone, '+989120000000')
     assert.equal(staffBody.leads[0].workId, 'samplework1')
     assert.equal(staffBody.leads[0].consentTextVersion, CONSENT_TEXT_VERSION)
     assert.equal(staffBody.leads[0].verified, false)
@@ -263,7 +263,7 @@ test('a lead from the first sign-in stores the work id', async () => {
 
     const lead = await handlePilotApi(db, storage, 'POST', body)
     assert.equal(lead.status, 200)
-    const rows = await db.select().from(schema.leads).where(eq(schema.leads.phone, '09121111111'))
+    const rows = await db.select().from(schema.leads).where(eq(schema.leads.phone, '+989121111111'))
     assert.equal(rows.length, 1)
     assert.equal(rows[0].workId, 'samplework1')
     assert.equal(rows[0].kind, 'save')
