@@ -4,10 +4,11 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 process.env.NODE_ENV = 'test'
+process.env.PUBLIC_RECORD_TTL_MS = '5000'
 delete process.env.O_GALLERY_ACCESS_CODE
 import { eq } from 'drizzle-orm'
 import * as schema from '../database/schema.ts'
-import { imageSetFor, loadPublicRecord } from './gallery-record.ts'
+import { imageSetFor, loadPublicRecord, PUBLIC_RECORD_TTL_MS } from './gallery-record.ts'
 import { handlePilotApi } from './pilot-api.ts'
 import { createTestDb } from './test-db.ts'
 
@@ -72,21 +73,23 @@ test('Persian work fields and show dates round-trip through publish', async () =
   }
 })
 
-test('the public record cache serves repeats and drops a stale copy after a direct write', async () => {
+test('the public record cache serves repeats and drops a stale copy after the TTL', async () => {
   const testDb = await createTestDb()
   await ensureOGalleryTenant(testDb.db)
   try {
     const { db, storage } = testDb
     const first = (await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!)).record
     await handlePilotApi(db, storage, 'PUT', { accessCode: 'inview', record: { ...first, showTitle: 'One', works: [work('cachework1')] } })
-    const a = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!)
-    const b = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!)
+    const base = Date.now()
+    const a = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!, base)
+    const b = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!, base)
     assert.equal(a, b)
     assert.equal(b.record.showTitle, 'One')
 
     const [show] = await db.select().from(schema.shows).limit(1)
     await db.update(schema.shows).set({ titleEn: 'Two', updatedAt: new Date(show.updatedAt.getTime() + 1000) }).where(eq(schema.shows.id, show.id))
-    const c = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!)
+    assert.equal(await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!, base), b)
+    const c = await loadPublicRecord(db, (await tenantBySlug(db, 'o-gallery'))!, base + PUBLIC_RECORD_TTL_MS + 1)
     assert.notEqual(c, b)
     assert.equal(c.record.showTitle, 'Two')
 

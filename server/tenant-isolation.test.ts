@@ -27,6 +27,7 @@ import { signInWithAccessCode } from './staff-session.ts'
 import { createTestDb } from './test-db.ts'
 
 process.env.PUBLIC_APP_URL = 'http://localhost'
+process.env.PUBLIC_RECORD_TTL_MS = '0'
 
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
 

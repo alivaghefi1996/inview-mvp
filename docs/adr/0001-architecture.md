@@ -142,6 +142,12 @@ logo, so the image bytes never go in the JSON body. The JSON limit is 256 KB.
 
 ### D7. Caching
 
+- Public catalogue in the process: each process keeps the catalogue of each gallery in
+  memory for `PUBLIC_RECORD_TTL_MS` (default 5000). A visitor page inside that window
+  makes no database query. The first page after the window makes one query for the
+  stamp. Publish empties the cache of its own process at once. Another process follows
+  when its window ends. The pods stay spread over the providers, so the cache, not pod
+  affinity, carries the pages that sit far from the Postgres primary.
 - Hashed build files and media: `Cache-Control: public, max-age=31536000, immutable`.
 - Public SSR pages: `public, max-age=0, s-maxage=60, stale-while-revalidate=600`.
 - Public SSR pages also send `Vary: Cookie`. The language cookie changes the HTML, so a

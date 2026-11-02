@@ -140,6 +140,29 @@ merges a sync pull request when a fast-forward is not possible.
 | `RATE_LIMIT_*` | Rate-limit salt, counts and windows. The server does not store the address. See [Rate limits](#rate-limits) for each variable. |
 | `S3_PUBLIC_BASE` | Public origin plus the bucket path. Production: `https://inview-media.moshes.io/inview` |
 | `S3_OBJECT_PREFIX` | Object key prefix the media route can serve. Production: `u` |
+| `PUBLIC_RECORD_TTL_MS` | How long one process serves the public catalogue from memory. Default 5000. See [Public catalogue cache](#public-catalogue-cache). |
+
+## Public catalogue cache
+
+Each process keeps the public catalogue of each gallery in memory. The visitor pages
+`/g/:slug`, `/g/:slug/works`, `/g/:slug/works/:id`, `/g/:slug/prices` and
+`/g/:slug/about` read that copy.
+
+A request inside the TTL makes no database query. The first request after the TTL
+makes one query. That query reads the gallery row and the show row, and it builds a
+stamp from the show id and the two `updated_at` values. The process reads the works
+again only when the stamp moved.
+
+Publish empties the cache of its own process at once. Another process shows the new
+catalogue when its TTL ends. A gallery that leaves the `live` status also stays on a
+warm process until its TTL ends.
+
+`PUBLIC_RECORD_TTL_MS` sets the TTL in milliseconds. `0` turns the memory copy off:
+every request then makes the stamp query. An empty or invalid value uses the default.
+
+The end-to-end fixtures write catalogue rows straight into the database, so they need
+`PUBLIC_RECORD_TTL_MS=0` on the server under test. CI sets it. Set it yourself when
+you start the server for `npm run test:e2e` or for a baseline run.
 
 ## Rate limits
 

@@ -354,44 +354,106 @@ async function readWorkStats(db: Db, galleryId: string, showId: string): Promise
     .sort((a, b) => b.views + b.saves + b.asks - (a.views + a.saves + a.asks))
 }
 
-type CachedRecord = { stamp: string; value: { record: GalleryRecordDto } }
+export type PublicPage = { record: GalleryRecordDto }
 
-const publicRecordCache = new WeakMap<object, Map<string, CachedRecord>>()
+type CachedPage = { stamp: string; checkedAt: number; value: PublicPage }
 
-export function clearPublicRecordCache(db: Db) {
-  publicRecordCache.delete(db)
+type PublicPageCache = {
+  generation: number
+  entries: Map<string, CachedPage>
+  pending: Map<string, Promise<PublicPage | null>>
 }
 
-async function recordStamp(db: Db, galleryId: string): Promise<string | null> {
+export const PUBLIC_RECORD_TTL_MS = 5_000
+
+const publicRecordCache = new WeakMap<object, PublicPageCache>()
+
+function ttlMs(): number {
+  const raw = process.env.PUBLIC_RECORD_TTL_MS
+  if (raw === undefined || raw.trim() === '') return PUBLIC_RECORD_TTL_MS
+  const value = Number(raw)
+  return Number.isFinite(value) && value >= 0 ? value : PUBLIC_RECORD_TTL_MS
+}
+
+function cacheFor(db: Db): PublicPageCache {
+  let store = publicRecordCache.get(db)
+  if (!store) {
+    store = { generation: 0, entries: new Map(), pending: new Map() }
+    publicRecordCache.set(db, store)
+  }
+  return store
+}
+
+export function clearPublicRecordCache(db: Db) {
+  const store = cacheFor(db)
+  store.generation += 1
+  store.entries.clear()
+}
+
+async function publicTenantBySlug(db: Db, slug: string): Promise<GalleryTenant | null> {
+  if (!GALLERY_SLUG_PATTERN.test(slug)) return null
   const [row] = await db
-    .select({ gallery: galleries.updatedAt, show: shows.updatedAt, showId: shows.id })
+    .select({ gallery: galleries, show: shows })
     .from(galleries)
     .innerJoin(shows, eq(shows.galleryId, galleries.id))
-    .where(eq(galleries.id, galleryId))
-    .orderBy(desc(shows.updatedAt))
+    .where(eq(galleries.slug, slug))
+    .orderBy(sql`${shows.status} = 'published' DESC`, desc(shows.updatedAt))
     .limit(1)
   if (!row) return null
-  return `${row.showId}:${new Date(row.gallery).getTime()}:${new Date(row.show).getTime()}`
+  return { gallery: row.gallery, show: row.show }
+}
+
+function stampOf(tenant: GalleryTenant): string {
+  const gallery = new Date(tenant.gallery.updatedAt).getTime()
+  const show = new Date(tenant.show.updatedAt).getTime()
+  return `${tenant.show.id}:${gallery}:${show}`
+}
+
+async function readPublicPage(
+  db: Db,
+  store: PublicPageCache,
+  slug: string,
+  now: number,
+): Promise<PublicPage | null> {
+  const generation = store.generation
+  const tenant = await publicTenantBySlug(db, slug)
+  if (!tenant || tenant.gallery.status !== 'live') {
+    store.entries.delete(slug)
+    return null
+  }
+  const stamp = stampOf(tenant)
+  const cached = store.entries.get(slug)
+  if (cached && cached.stamp === stamp) {
+    cached.checkedAt = now
+    return cached.value
+  }
+  const value: PublicPage = { record: await readRecord(db, tenant.gallery, tenant.show) }
+  if (store.generation === generation) store.entries.set(slug, { stamp, checkedAt: now, value })
+  return value
 }
 
 /** Public catalogue only. This function does not read visits or leads. */
-export async function loadPublicRecord(db: Db, tenant: GalleryTenant): Promise<{ record: GalleryRecordDto }> {
-  const own = await tenantById(db, tenant.gallery.id)
-  if (!own || own.gallery.status !== 'live') throw galleryNotFound()
-  const stamp = await recordStamp(db, own.gallery.id)
-  let byGallery = publicRecordCache.get(db)
-  const cached = byGallery?.get(own.gallery.id)
-  if (stamp && cached && cached.stamp === stamp) return cached.value
-  const fresh = own
-  const value = { record: await readRecord(db, fresh.gallery, fresh.show) }
-  if (stamp) {
-    if (!byGallery) {
-      byGallery = new Map()
-      publicRecordCache.set(db, byGallery)
-    }
-    byGallery.set(own.gallery.id, { stamp, value })
-  }
-  return value
+export function loadPublicPage(db: Db, slug: string, now: number = Date.now()): Promise<PublicPage | null> {
+  const store = cacheFor(db)
+  const cached = store.entries.get(slug)
+  if (cached && now - cached.checkedAt < ttlMs()) return Promise.resolve(cached.value)
+  const started = store.pending.get(slug)
+  if (started) return started
+  const pending = readPublicPage(db, store, slug, now).finally(() => {
+    store.pending.delete(slug)
+  })
+  store.pending.set(slug, pending)
+  return pending
+}
+
+export async function loadPublicRecord(
+  db: Db,
+  tenant: GalleryTenant,
+  now: number = Date.now(),
+): Promise<PublicPage> {
+  const page = await loadPublicPage(db, tenant.gallery.slug, now)
+  if (!page) throw galleryNotFound()
+  return page
 }
 
 export async function loadStaffRecord(db: Db, tenant: GalleryTenant): Promise<{ record: GalleryRecordDto }> {
