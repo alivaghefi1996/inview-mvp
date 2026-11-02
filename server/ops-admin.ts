@@ -43,7 +43,7 @@ export async function inviteOperator(db: AccountDb, principal: Principal | null,
   })
 }
 
-export async function updateOperator(db: AccountDb, principal: Principal | null, userId: string, change: { role: PlatformRole } | { disable: true }) {
+export async function updateOperator(db: AccountDb, principal: Principal | null, userId: string, change: { role: PlatformRole } | { disable: true } | { enable: true }) {
   const actor = requireOperatorAdmin(principal)
   if (!/^[0-9a-f-]{36}$/.test(userId)) throw new AccountInputError('Invalid operator.')
   if ('role' in change) validRole(change.role)
@@ -52,15 +52,22 @@ export async function updateOperator(db: AccountDb, principal: Principal | null,
     const [before] = await tx.select({ role: users.platformRole, status: users.status }).from(users)
       .where(and(eq(users.id, userId), isNotNull(users.platformRole))).for('update').limit(1)
     if (!before) throw new AccountInputError('Operator not found.')
-    await tx.update(users).set({ ...('role' in change ? { platformRole: change.role } : { status: 'disabled' as const }), updatedAt: new Date() })
-      .where(eq(users.id, userId))
-    await tx.delete(sessions).where(eq(sessions.userId, userId))
-    if ('role' in change) {
-      await tx.update(invitations).set({ platformRole: change.role })
-        .where(and(eq(invitations.userId, userId), eq(invitations.kind, 'operator'), isNull(invitations.consumedAt)))
+    if ('enable' in change) {
+      await tx.update(users).set({ status: 'active' as const, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+      await writeAudit(tx, { actorUserId: actor.userId, action: 'operator-enable', targetType: 'user', targetId: userId,
+        summary: { before, after: { role: before.role, status: 'active' } } })
+    } else {
+      await tx.update(users).set({ ...('role' in change ? { platformRole: change.role } : { status: 'disabled' as const }), updatedAt: new Date() })
+        .where(eq(users.id, userId))
+      await tx.delete(sessions).where(eq(sessions.userId, userId))
+      if ('role' in change) {
+        await tx.update(invitations).set({ platformRole: change.role })
+          .where(and(eq(invitations.userId, userId), eq(invitations.kind, 'operator'), isNull(invitations.consumedAt)))
+      }
+      await writeAudit(tx, { actorUserId: actor.userId, action: 'role' in change ? 'operator-role' : 'operator-disable', targetType: 'user', targetId: userId,
+        summary: { before, after: 'role' in change ? { role: change.role, status: before.status } : { role: before.role, status: 'disabled' } } })
     }
-    await writeAudit(tx, { actorUserId: actor.userId, action: 'role' in change ? 'operator-role' : 'operator-disable', targetType: 'user', targetId: userId,
-      summary: { before, after: 'role' in change ? { role: change.role, status: before.status } : { role: before.role, status: 'disabled' } } })
   })
 }
 
