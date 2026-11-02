@@ -118,11 +118,6 @@
 .sg-stage-ground .sheet { animation: none; max-height: none; }
 .sg-sheet-title { margin: 0; font-size: 20px; font-weight: 600; }
 
-.sg-skeleton { display: grid; gap: var(--space-2); max-width: 420px; }
-.sg-skeleton .skeleton { display: block; height: 14px; }
-.sg-skeleton .skeleton:first-child { height: 96px; }
-.sg-skeleton .skeleton:last-child { inline-size: 60%; }
-
 .sg-ledger { display: grid; }
 .sg-type-row {
   display: grid;

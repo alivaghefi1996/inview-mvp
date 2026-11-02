@@ -18,8 +18,10 @@ import { renderStaff } from './test-render'
 
 const css = readFileSync(new URL('../app/styles.css', import.meta.url), 'utf8')
 
-function tokenValue(name: string) {
-  return css.match(new RegExp(`^\\s*${name}:\\s*([^;]+);`, 'm'))?.[1].trim()
+function tokenValue(name: string): string | undefined {
+  const value = css.match(new RegExp(`^\\s*${name}:\\s*([^;]+);`, 'm'))?.[1].trim()
+  const alias = value?.match(/^var\((--[\w-]+)\)$/)?.[1]
+  return alias ? tokenValue(alias) : value
 }
 
 test('the style page lists the token values from app/styles.css', () => {
@@ -48,7 +50,7 @@ for (const lang of ['en', 'fa'] as const) {
     const html = renderStaff(createElement(StyleGuide), lang, '/staff/style')
     assert.match(html, new RegExp(`dir="${lang === 'fa' ? 'rtl' : 'ltr'}"`))
     assert.ok(html.includes(styleDictionaries[lang].heroTitle))
-    for (const part of ['btn-primary', 'chips', 's-reserved', 'pill warn', 'wall-label', 'price-row', 'class="sheet"', 'sheet-form', 'empty-state', 'skeleton', 'staff-totals', 'staff-table', 'bar-track']) {
+    for (const part of ['btn-primary', 'chips', 's-reserved', 'pill warn', 'wall-label', 'price-row', 'class="sheet"', 'sheet-form', 'empty-state', 'aria-busy', 'staff-totals', 'staff-table', 'bar-track', 'class="cols" role="img"']) {
       assert.ok(html.includes(part), part)
     }
   })

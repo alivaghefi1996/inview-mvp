@@ -17,6 +17,9 @@ export const colourTokens = [
   { name: '--warn', hex: '#A35731' },
   { name: '--sold', hex: '#8B2E22' },
   { name: '--danger', hex: '#9B2C1F' },
+  { name: '--surface-dim', hex: '#FAF9F6' },
+  { name: '--chart-bar', hex: '#5A564E' },
+  { name: '--on-ink-muted', hex: '#A9A9A2' },
 ] as const
 
 export type ColourToken = (typeof colourTokens)[number]['name']
@@ -40,9 +43,12 @@ export const contrastPairs: { foreground: ColourToken | 'white'; background: Col
   { foreground: '--warn', background: '--paper', kind: 'text' },
   { foreground: '--sold', background: '--surface', kind: 'text' },
   { foreground: '--danger', background: '--paper', kind: 'text' },
+  { foreground: '--muted', background: '--surface-dim', kind: 'text' },
+  { foreground: '--on-ink-muted', background: '--ink', kind: 'text' },
   { foreground: '--ochre', background: '--paper', kind: 'ui' },
   { foreground: '--pine', background: '--field', kind: 'ui' },
   { foreground: '--ochre', background: '--field', kind: 'ui' },
+  { foreground: '--chart-bar', background: '--surface', kind: 'ui' },
 ]
 
 export const spaceTokens = [

@@ -54,6 +54,10 @@ const BAR_SHARES = [
   { share: 12, tone: 'pine' },
 ]
 
+const COLUMN_VALUES = [128, 96, 143]
+
+const BUSY_SELECTOR = 'main[aria-busy=true]'
+
 function Code({ children }: { children: string }) {
   return <code className="sg-code" dir="ltr">{children}</code>
 }
@@ -341,13 +345,10 @@ export default function StyleGuide() {
                 <button type="button" className="btn btn-outline">{t.errorAction}</button>
               </div>
             </Specimen>
-            <Specimen lang={lang} visitor code=".skeleton">
-              <div className="sg-skeleton" role="status" aria-label={t.loading}>
-                <span className="skeleton" aria-hidden />
-                <span className="skeleton" aria-hidden />
-                <span className="skeleton" aria-hidden />
-              </div>
-            </Specimen>
+            <h3 className="sg-sub">{t.busyTitle}</h3>
+            <dl className="sg-rows">
+              <div><dt><Code>{BUSY_SELECTOR}</Code></dt><dd>{t.busyBody}</dd></div>
+            </dl>
           </Plate>
 
           <Plate id="tables" title={t.tablesTitle} note={t.tablesNote}>
@@ -392,6 +393,17 @@ export default function StyleGuide() {
                   </li>
                 ))}
               </ul>
+            </Specimen>
+            <Specimen lang={lang} code=".cols .col-wrap .col-value .col .col-label">
+              <div className="cols" role="img" aria-label={`${t.columnsLabel}: ${COLUMN_VALUES.map((value, index) => `${t.tableDays[index]} ${format.number(value)}`).join(', ')}`}>
+                {COLUMN_VALUES.map((value, index) => (
+                  <span key={t.tableDays[index]} className="col-wrap">
+                    <span className="col-value" aria-hidden>{format.number(value)}</span>
+                    <span className="col" style={{ height: `${(value / Math.max(...COLUMN_VALUES)) * 100}%` }} />
+                    <span className="col-label">{t.tableDays[index]}</span>
+                  </span>
+                ))}
+              </div>
             </Specimen>
           </Plate>
         </main>
