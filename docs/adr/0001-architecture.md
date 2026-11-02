@@ -1,9 +1,9 @@
 # ADR 0001: Architecture for the Inview platform
 
-- Status: Proposed
+- Status: Accepted on 2026-11-02
 - Date: 2026-11-01
 - Scope: the O Gallery pilot and the multi-tenant base
-- Deciders: Mohsen (build and operations), Ali (product, Iran market)
+- Deciders: Mohsen and Ali (product), Mohsen (build and operations)
 
 ## 1. Context
 
@@ -16,31 +16,19 @@ for many galleries.
 
 These facts and needs control the decisions:
 
-1. Most users are in Iran on mobile networks. The international link is slow and can
-   stop. Filters can block a foreign service. We must be able to move to an Iranian
-   host (ArvanCloud or Liara) later.
+1. Most users are on mobile networks, and the network can be slow. We must be able to
+   move to another host later.
 2. Public pages read much more than they write. They show many images.
-3. Gallery websites (`/site/:slug`, later `<slug>.inview.ir`) need search engine
+3. Gallery websites (`/site/:slug`) need search engine
    results (SEO) and a fast first paint. The visitor app must stay an installable PWA.
    It must show pages that the visitor opened before when the network is weak.
 4. Many galleries, shows, works and QR codes from the first day.
 5. Persian text, right-to-left (RTL) layout, prices in Toman, Jalali dates.
-6. Login with a phone number and a one-time code (OTP). Iranian SMS provider.
-   Staff roles in each gallery.
-7. Payments in Iran have a sanctions risk for Mohsen.
+6. Staff roles in each gallery. Login with a one-time code (OTP) waits for an SMS provider.
+7. Payments are not in the MVP.
 8. Galleries need counts of scans, views and leads.
 9. The team is small. Mohsen operates the ha3 cluster (k3s, Flux, SOPS, Traefik,
    cert-manager, CNPG Postgres, Garage S3, Cloudflare tunnel).
-
-Facts that we checked on 2026-10-31:
-
-- Monitors in Iran (covered.ir) show Cloudflare sites as reachable from 10 Iranian
-  networks. Median time to first byte is 240 ms to 1.4 s.
-- Vercel shows "403 DDoS Migration" errors to users in Iran, because Iranian traffic
-  comes from shared gateway addresses (Vercel community forum, May 2026).
-  Vercel terms also limit use from sanctioned countries.
-- ArvanCloud CDN is reachable in Iran. During the 2026 shutdown, foreign points could
-  not connect to Iranian servers. The reverse is also true.
 
 ## 2. Decisions
 
@@ -50,9 +38,8 @@ Each decision compares two or more options. The chosen option is first.
 
 | Option | For | Against |
 |---|---|---|
-| **One OCI container image on ha3, behind Cloudflare now. The same image on an Iranian host later.** | No lock-in. Iranian hosts (Liara, ArvanCloud) run containers and have Postgres and S3-compatible storage. Mohsen operates ha3 today at no new cost. | ha3 is in the EU. Each request crosses the international link. |
-| Vercel | Easy deploys. Already in `vercel.json`. | 403 errors for Iranian users. Sanctions terms. Functions and `/tmp` storage are not permanent. Lock-in. |
-| Iranian host now | Fastest for users. No filter risk. | Needs an Iranian account and payment (Ali). Mohsen cannot operate it now. |
+| **One OCI container image on ha3, behind Cloudflare. The same image can move to another host later.** | No lock-in. Any host that runs containers, Postgres and S3-compatible storage can run it. Mohsen operates ha3 today at no new cost. | One cluster, operated by one person. |
+| Vercel | Easy deploys. Already in `vercel.json`. | Functions and `/tmp` storage are not permanent. Lock-in. |
 
 Decision: build one container image. Configure it only with environment variables.
 Use only Postgres and the S3 API as backing services. Do not use a CDN-specific
@@ -93,7 +80,7 @@ successor. Remove the alias on 2 December 2026. After that date the path returns
 
 | Option | For | Against |
 |---|---|---|
-| **Node 22 LTS** | Every host supports it, also Liara and ArvanCloud. `sharp` and the AWS SDK work without problems. Long support. | A little slower than Bun. |
+| **Node 22 LTS** | Every host supports it. `sharp` and the AWS SDK work without problems. Long support. | A little slower than Bun. |
 | Bun (wishlist pattern) | Fast install and start. Built-in test runner. | Fewer hosts support it. Some native modules have problems. |
 
 Decision: Node 22 LTS. Tests use `node --test` and Vitest only where it is necessary.
@@ -102,7 +89,7 @@ Decision: Node 22 LTS. Tests use `node --test` and Vitest only where it is neces
 
 | Option | For | Against |
 |---|---|---|
-| **Postgres with Drizzle ORM and SQL migrations** | Relational data, transactions, JSON when it is necessary. CNPG on ha3 now. Managed Postgres on Iranian hosts later. Drizzle is light and gives typed queries. | One more service to operate. |
+| **Postgres with Drizzle ORM and SQL migrations** | Relational data, transactions, JSON when it is necessary. CNPG on ha3 now. Managed Postgres on another host later. Drizzle is light and gives typed queries. | One more service to operate. |
 | SQLite (file on a volume) | Simple. | One writer, one pod. A volume ties the app to one node. Harder to move. |
 | JSON file (current pilot) | No setup. | No concurrency, no queries, images in text. |
 
@@ -135,7 +122,7 @@ Prices are whole Toman in `bigint`. Times are UTC `timestamptz`.
 
 Decision: variants at upload. The server checks the type and the size, removes EXIF
 data and writes the variants to S3. Storage is Garage (bucket `inview`, public host
-`inview-media.moshes.io`) now. ArvanCloud Object Storage or Liara storage later.
+`inview-media.moshes.io`).
 Add imgproxy only if we need many sizes.
 
 The editor sends each image as `multipart/form-data` to `POST /api/v1/uploads`. The
@@ -156,7 +143,7 @@ logo, so the image bytes never go in the JSON body. The JSON limit is 256 KB.
 - Public SSR pages also send `Vary: Cookie`. The language cookie changes the HTML, so a
   shared cache must keep one entry for each language.
 - Editor and API: `no-store`.
-- The CDN (Cloudflare now, ArvanCloud later) follows these headers. We do not use a
+- The CDN (Cloudflare) follows these headers. We do not use a
   CDN-specific rule.
 
 ### D8. PWA and offline
@@ -194,18 +181,16 @@ The Rooz demo dashboard has English text only.
 
 | Option | For | Against |
 |---|---|---|
-| **Phone OTP behind an `SmsProvider` interface. Server sessions in Postgres with an httpOnly cookie. Roles in `memberships`.** | We can stop a session at once. Simple. The provider can change (Kavenegar, Ghasedak, SMS.ir). | One database read for each request. |
+| **Phone OTP behind an `SmsProvider` interface. Server sessions in Postgres with an httpOnly cookie. Roles in `memberships`.** | We can stop a session at once. Simple. The provider can change. | One database read for each request. |
 | JWT in the browser | No session table. | Hard to stop a stolen token. |
 | A shared editor password (old pilot) | Simple. | No users, no roles, no audit. |
 
 Decision: OTP codes have 6 digits. The server stores only a hash. A code is valid for
 2 minutes. The server limits attempts for each phone and each IP address. In
-development, a console provider writes the code to the log. In production, the app
-uses Kavenegar when Ali gives an API key and a sender line. Until then, the pilot uses
+development, a console provider writes the code to the log. No production provider is selected. Until one is selected, the pilot uses
 one access code for each gallery. The code is the environment variable
 `O_GALLERY_ACCESS_CODE` in a SOPS secret. The database keeps only a scrypt hash.
-At start, the server writes a new hash when the saved hash is empty or does not match
-the code. The log does not show the code or the hash. In production, the server stops
+At start, the server writes a hash only when the saved hash is empty. The log does not show the code or the hash. In production, the server stops
 when the variable is missing. A development default is allowed only when `NODE_ENV`
 is not `production`. Until OTP is available, publish, upload and staff sign-in use
 the Postgres limits in D13.
@@ -223,16 +208,14 @@ public. They do not use this gate. The browser bundle does not contain the acces
 
 ### D11. Payments
 
-Payments are not in the MVP. We do not add a payment provider. Iranian gateways need
-an Iranian company and have sanctions risk for Mohsen. Ali decides about payments.
-If we add them, they go behind a `PaymentProvider` interface, under an account that
-Ali or his company owns.
+Payments are not in the MVP. We do not add a payment provider. Mohsen and Ali decide
+about payments. If we add them, they go behind a `PaymentProvider` interface.
 
 ### D12. Analytics
 
 | Option | For | Against |
 |---|---|---|
-| **Postgres tables (`visits`, `leads`) and daily totals for each show** | No third-party script. No filter risk. The data stays with the gallery data. Easy to show in the dashboard. | We write the reports. |
+| **Postgres tables (`visits`, `leads`) and daily totals for each show** | No third-party script. The data stays with the gallery data. Easy to show in the dashboard. | We write the reports. |
 | Umami or Plausible (self-hosted) | Ready reports. | One more service. It does not know shows, works and QR codes. |
 
 Decision: Postgres tables. A visitor id is a random value in the browser. We do not
@@ -270,7 +253,7 @@ the same as the wishlist app.
 Build one Node 22 container with React Router 7 (SSR, loaders and actions, Vite, PWA),
 Drizzle and Postgres, and S3 storage with image variants made at upload.
 Run it on ha3 with Flux now. Keep it free of host-specific features, so that we can
-move it to an Iranian host.
+move it to another host.
 
 The pilot scope is:
 
@@ -281,16 +264,11 @@ The pilot scope is:
 5. Scan, view and lead counts.
 6. Deploy to `inview.moshes.io` and `inview-media.moshes.io`.
 
-## 4. Open questions for Ali
+## 4. Open questions
 
-1. Domain: who registers `inview.ir`, and when? Wildcard subdomains need a wildcard
-   certificate and DNS access.
-2. Hosting in Iran: which provider, and when? Who owns the account?
-3. SMS: which provider, which sender line, and who pays?
-4. Payments: do we need them in the first year? Under which company?
-5. Privacy: what text do we show before we store a visitor phone number?
-6. Data location: must the gallery data stay in Iran?
-7. Who owns the code and the brand? This fork is the deploy source. Ali's repository
+1. SMS: which provider, which sender line, and who pays? OTP stays out of the MVP.
+2. Payments: do we need them in the first year? Under which company?
+3. Who owns the code and the brand? This fork is the deploy source. Ali's repository
    gets the same commits through pull request 1.
 
 ## 5. Consequences

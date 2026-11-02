@@ -1,6 +1,6 @@
 # Inview
 
-Inview gives art galleries in Iran a visitor app, a price list and a gallery website.
+Inview gives art galleries a visitor app, a price list and a gallery website.
 A visitor scans a QR code at a show. The visitor sees the works and the prices on a mobile phone.
 
 This repository holds the O Gallery pilot and the multi-tenant base.
