@@ -2234,9 +2234,11 @@ td {
   justify-content: space-between;
   align-items: flex-end;
   gap: var(--space-3);
-  padding: var(--space-6) var(--space-4) var(--space-3);
+  --cover-fade: var(--space-6);
+  padding: var(--cover-fade) var(--space-4) var(--space-3);
   color: var(--surface);
-  background: linear-gradient(180deg, rgba(18, 23, 20, 0), rgba(18, 23, 20, 0.84));
+  /* The text starts where the fade ends, so it stays readable on a white artwork. */
+  background: linear-gradient(180deg, rgba(18, 23, 20, 0), rgba(18, 23, 20, 0.72) var(--cover-fade), rgba(18, 23, 20, 0.84));
   font-family: var(--serif);
   font-size: 1.05rem;
 }
@@ -2284,7 +2286,8 @@ td {
     min-height: 100%;
   }
   .o-cover figcaption {
-    padding: var(--space-7) clamp(28px, 4vw, 56px) clamp(24px, 3vw, 40px);
+    --cover-fade: var(--space-7);
+    padding: var(--cover-fade) clamp(28px, 4vw, 56px) clamp(24px, 3vw, 40px);
     font-size: clamp(1.25rem, 2vw, 1.75rem);
   }
   .work:has(.work-figure) .work-figure {
