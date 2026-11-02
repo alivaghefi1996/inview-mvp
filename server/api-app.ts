@@ -70,6 +70,8 @@ function apiFailure(res: express.Response, error: unknown): boolean {
 
 export const JSON_LIMIT = '256kb'
 
+export const PILOT_ALIAS_SUNSET = 'Wed, 02 Dec 2026 00:00:00 GMT'
+
 const UPLOAD_MISSING = { error: 'Choose an image to upload.', errorFa: 'یک تصویر برای بارگذاری انتخاب کنید.' }
 const UPLOAD_FAILED = { error: 'The upload did not complete. Try again.', errorFa: 'بارگذاری انجام نشد. دوباره تلاش کنید.' }
 const BODY_TOO_LARGE = { error: 'The request is too large.', errorFa: 'درخواست بیش از حد بزرگ است.' }
@@ -200,6 +202,7 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
   app.all('/api/v1/pilot', pilot)
   app.all('/api/pilot', (req, res) => {
     res.setHeader('Deprecation', 'true')
+    res.setHeader('Sunset', PILOT_ALIAS_SUNSET)
     res.setHeader('Link', '</api/v1/pilot>; rel="successor-version"')
     return pilot(req, res)
   })

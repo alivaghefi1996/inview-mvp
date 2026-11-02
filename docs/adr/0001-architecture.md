@@ -86,6 +86,10 @@ Decision: loaders and actions for pages. Resource routes under `/api/v1/` for th
 and view beacon, lead capture, uploads and health. If a mobile app or a partner needs
 an API later, add Hono under `/api/v1/` in the same server.
 
+The old path `/api/pilot` stays as an alias of `/api/v1/pilot`. It sends
+`Deprecation: true`, `Sunset: Wed, 02 Dec 2026 00:00:00 GMT` and a `Link` header to its
+successor. Remove the alias on 2 December 2026. After that date the path returns 404.
+
 ### D4. Runtime
 
 | Option | For | Against |
