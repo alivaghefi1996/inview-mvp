@@ -280,6 +280,7 @@ export function OWorks({ record }: { record: PilotRecord }) {
     return (
       <EmptyState
         title={name}
+        headingLevel={1}
         body={copy.emptyBody}
         action={<Link className="btn btn-outline" to={`/g/${record.slug}`}>{copy.currentShow}</Link>}
       />
@@ -332,6 +333,7 @@ export function OPrices({ record }: { record: PilotRecord }) {
     return (
       <EmptyState
         title={name}
+        headingLevel={1}
         body={copy.emptyBody}
         action={<Link className="btn btn-outline" to={`/g/${record.slug}/works`}>{copy.seeWorks}</Link>}
       />
