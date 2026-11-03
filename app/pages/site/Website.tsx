@@ -131,7 +131,7 @@ function RoozWebsite() {
       <footer className="site-foot" id="visit">
         <div>
           <p className="site-brand light">{gallery.name.toUpperCase()}</p>
-          <p>{gallery.address}<br />{gallery.hours}<br />Instagram <a href={`https://instagram.com/${gallery.instagram}`}>@{gallery.instagram}</a></p>
+          <p>{gallery.address}<br />{gallery.hours}<br />Instagram <a className="text-link" href={`https://instagram.com/${gallery.instagram}`}>@{gallery.instagram}</a></p>
         </div>
         <p className="site-made">Website by Inview</p>
       </footer>

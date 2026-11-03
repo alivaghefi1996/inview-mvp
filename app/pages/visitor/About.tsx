@@ -57,7 +57,7 @@ function RoozAbout() {
         <h2 className="section-title">{t.visit}</h2>
         <p>{t.address}</p>
         <p>{t.hours}</p>
-        <p><a href={`https://instagram.com/${gallery.instagram}`}>@{gallery.instagram}</a></p>
+        <p><a className="text-link" href={`https://instagram.com/${gallery.instagram}`}>@{gallery.instagram}</a></p>
         <a className="btn btn-outline" href={`tel:${gallery.phone.replace(/\s/g, '')}`}>{t.call}</a>
       </section>
     </div>

@@ -54,6 +54,8 @@
 
   --visitor-max: 1120px;
   --touch: 44px;
+  /* The floor for a target that cannot take the full 44px, from WCAG 2.2 target size (minimum). */
+  --target-min: 24px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --dur: 420ms;
 
@@ -75,6 +77,12 @@ body {
 img { display: block; max-width: 100%; height: auto; }
 picture { display: contents; }
 a { color: var(--pine); }
+/* A link in a line of text is as tall as its text, so hold it at the target minimum. */
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+}
 button { font: inherit; color: inherit; cursor: pointer; background: none; }
 :focus-visible {
   outline: 2px solid var(--focus);
@@ -453,8 +461,11 @@ main[tabindex='-1']:focus { outline: none; }
   }
   .v-desktop-nav a {
     min-height: var(--touch);
+    /* A short label such as the Persian آثار is narrower than the 24px target minimum. */
+    min-width: var(--target-min);
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     padding-block: 8px;
     color: var(--muted);
     text-decoration: none;
