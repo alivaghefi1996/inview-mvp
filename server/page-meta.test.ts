@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 
 process.env.NODE_ENV = 'test'
 
-import { galleryPageMeta } from '../app/lib/meta.ts'
+import { UNSAFE_ErrorResponseImpl } from 'react-router'
+import { galleryPageMeta, rootMeta } from '../app/lib/meta.ts'
 import type { PilotRecord, PilotWork } from '../app/lib/pilot.ts'
 
 const CARD_SIZES = '(min-width: 960px) 30vw, calc(50vw - 32px)'
@@ -98,4 +99,38 @@ test('the prices and about pages preload no image', () => {
   const works = [work('aaa')]
   assert.deepEqual(imagePreloads(galleryPageMeta('prices', MATCHES, '/g/sample/prices', { pilot: record(works) })), [])
   assert.deepEqual(imagePreloads(galleryPageMeta('about', MATCHES, '/g/sample/about', { pilot: record(works) })), [])
+})
+
+function titleOf(tags: Record<string, string>[]) {
+  return tags.find((tag) => 'title' in tag)?.title
+}
+
+function robotsOf(tags: Record<string, string>[]) {
+  return tags.find((tag) => tag.name === 'robots')?.content
+}
+
+// React Router turns the 404 Response a loader throws into this class before the boundary renders.
+const routeNotFound = () => new UNSAFE_ErrorResponseImpl(404, 'Not Found', null)
+
+test('a loader that answers 404 names the error page and keeps it out of the index', () => {
+  const en = rootMeta({ lang: 'en', error: routeNotFound() })
+  assert.equal(titleOf(en), 'Page not found · Inview')
+  assert.equal(robotsOf(en), 'noindex')
+
+  const fa = rootMeta({ lang: 'fa', error: routeNotFound() })
+  assert.equal(titleOf(fa), 'صفحه پیدا نشد · اینویو')
+  assert.equal(robotsOf(fa), 'noindex')
+})
+
+test('an error page that is not a 404 stays out of the index too', () => {
+  const tags = rootMeta({ lang: 'en', error: new Error('the catalogue is down') })
+  assert.equal(titleOf(tags), 'Inview')
+  assert.equal(robotsOf(tags), 'noindex')
+})
+
+test('a page that loads keeps the site title, the tagline and no robots tag', () => {
+  const tags = rootMeta({ lang: 'en' })
+  assert.equal(titleOf(tags), 'Inview')
+  assert.equal(robotsOf(tags), undefined)
+  assert.ok(tags.some((tag) => tag.name === 'description' && tag.content.includes('on your phone')))
 })

@@ -12,7 +12,7 @@ import {
 } from 'react-router'
 import type { Route } from './+types/root'
 import { useT } from './lib/i18n'
-import { metaCopy } from './lib/meta'
+import { rootMeta } from './lib/meta'
 import { dirFor, resolveLang } from './lib/lang'
 import { APP_MANIFEST_PATH, galleryManifestPath } from './lib/manifest'
 import { ServiceWorker } from './components/ServiceWorker'
@@ -39,10 +39,7 @@ export function loader({ request }: Route.LoaderArgs) {
   return { lang, dir: dirFor(lang), origin, manifest: slug ? galleryManifestPath(slug) : APP_MANIFEST_PATH }
 }
 
-export const meta: Route.MetaFunction = ({ data }) => {
-  const words = metaCopy(data?.lang ?? 'en')
-  return [{ title: words.site }, { name: 'description', content: words.tagline }]
-}
+export const meta: Route.MetaFunction = ({ data, error }) => rootMeta({ lang: data?.lang, error })
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useRouteLoaderData<typeof loader>('root')

@@ -1,3 +1,4 @@
+import { isRouteErrorResponse } from 'react-router'
 import { artworks, gallery as demoGallery, show as demoShow } from '../data/gallery'
 import type { Lang } from './lang'
 import { pick, type PilotRecord, type PilotWork } from './pilot'
@@ -45,6 +46,18 @@ export type PageKind = 'show' | 'works' | 'prices' | 'about' | 'work' | 'website
 
 export function metaCopy(lang: Lang) {
   return copy[lang]
+}
+
+// A loader that throws drops its own route from the meta chain, so the root route titles every
+// error page the boundary renders, not only the splat route under `*`.
+export function rootMeta(input: { lang?: Lang; error?: unknown }): MetaTag[] {
+  const words = copy[input.lang ?? 'en']
+  if (!input.error) return [{ title: words.site }, { name: 'description', content: words.tagline }]
+  const missing = isRouteErrorResponse(input.error) && input.error.status === 404
+  return [
+    { title: missing ? `${words.notFound} · ${words.site}` : words.site },
+    { name: 'robots', content: 'noindex' },
+  ]
 }
 
 export function rootData(matches: MetaMatch[]): { lang: Lang; origin: string } {

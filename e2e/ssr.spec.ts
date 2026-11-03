@@ -97,6 +97,19 @@ test.describe('server rendering', () => {
     expect(await missingWork.text()).toContain('صفحه پیدا نشد')
   })
 
+  test('every 404 carries the not-found title and noindex', async ({ request }) => {
+    const titles = { en: 'Page not found · Inview', fa: 'صفحه پیدا نشد · اینویو' }
+    for (const path of ['/no-such-page', '/g/unknown-slug', '/g/o-gallery/works/no-such-work']) {
+      for (const [lang, title] of Object.entries(titles)) {
+        const response = await request.get(path, { headers: { cookie: `inview-lang=${lang}` } })
+        expect(response.status(), `${path} ${lang}`).toBe(404)
+        const body = await response.text()
+        expect(body, `${path} ${lang}`).toContain(`<title>${title}</title>`)
+        expect(body, `${path} ${lang}`).toMatch(/<meta name="robots" content="noindex"\/?>/)
+      }
+    }
+  })
+
   test('the landing language switch updates the document and persists after reload', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('html')).toHaveAttribute('lang', 'fa')
