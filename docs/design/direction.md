@@ -2,7 +2,7 @@
 
 ## Audience
 
-- **Visitors** (primary): people at a show in Iran. They scan a QR code on a phone, then browse the current show, works and prices. Persian is the default. English is one tap away.
+- **Visitors** (primary): people at a show. They scan a QR code on a phone, then browse the current show, works and prices. Persian is the default. English is one tap away.
 - **Gallery owners** (secondary): staff who edit the show on a desktop, and sometimes on a phone between clients.
 
 ## Tone
