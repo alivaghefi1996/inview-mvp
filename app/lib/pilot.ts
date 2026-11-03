@@ -144,13 +144,15 @@ function readBody(res: Response) {
   return res.text().then(() => res)
 }
 
-export function recordLandingScan(gallery: string, qrCode?: string | null) {
+export function recordLandingScan(gallery: string, qrCode?: string | null, onQrConfirmed?: (showId: string) => void) {
   const day = tehranDay()
-  const localKey = `inview-scan-${gallery}-${day}`
+  const code = qrCode && QR_CODE_PATTERN.test(qrCode) ? qrCode : undefined
+  const dayKey = `inview-scan-${gallery}-${day}`
+  const localKey = code ? `${dayKey}-${code}` : dayKey
   try {
     if (localStorage.getItem(localKey) === '1') return
   } catch { /* count on the server */ }
-  const mark = `scan:${gallery}:${day}:${getVisitorId()}`
+  const mark = `scan:${gallery}:${day}:${getVisitorId()}:${code ?? ''}`
   if (sent.has(mark)) return
   sent.add(mark)
   void fetch('/api/v1/pilot', {
@@ -161,11 +163,16 @@ export function recordLandingScan(gallery: string, qrCode?: string | null) {
       gallery,
       kind: 'scan',
       visitorId: getVisitorId(),
-      qrCode: qrCode && QR_CODE_PATTERN.test(qrCode) ? qrCode : undefined,
+      qrCode: code,
     }),
-  }).then(readBody).then((res) => {
+  }).then(async (res) => {
     if (!res.ok) throw new Error('scan failed')
-    try { localStorage.setItem(localKey, '1') } catch { /* server still dedupes */ }
+    const body = (await res.json()) as { qrShowId?: string | null }
+    try {
+      localStorage.setItem(dayKey, '1')
+      localStorage.setItem(localKey, '1')
+    } catch { /* server still dedupes */ }
+    if (body.qrShowId) onQrConfirmed?.(body.qrShowId)
   }).catch(() => { sent.delete(mark) })
 }
 

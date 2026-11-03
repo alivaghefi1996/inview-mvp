@@ -45,7 +45,7 @@ export function WorkImage({
   sizes,
   priority = false,
 }: {
-  work: PilotWork
+  work: Pick<PilotWork, 'image' | 'imageSet'>
   alt: string
   sizes: string
   priority?: boolean
@@ -376,6 +376,16 @@ export function OWork({ work, record }: { work: PilotWork; record: PilotRecord }
 
   const isSaved = saved.includes(work.id)
   const text = workText(work, lang)
+  const snapshot = {
+    gallery: slug,
+    id: work.id,
+    title: work.title,
+    titleFa: work.titleFa ?? '',
+    artist: work.artist,
+    artistFa: work.artistFa ?? '',
+    image: work.image,
+    imageSet: work.imageSet ?? null,
+  }
   return (
     <div className="work">
       <div className="pad row between">
@@ -423,8 +433,8 @@ export function OWork({ work, record }: { work: PilotWork; record: PilotRecord }
           className={`btn ${isSaved ? 'btn-quiet' : 'btn-primary'}`}
           onClick={() => {
             if (isSaved) visitor.toggleSaved(work.id)
-            else if (phone && consentVersion === CONSENT_TEXT_VERSION) { visitor.save(work.id); reportLead(slug, phone, 'save', work.id) }
-            else requireSignIn('save', () => visitor.save(work.id), text.title, work.id)
+            else if (phone && consentVersion === CONSENT_TEXT_VERSION) { visitor.saveWork(snapshot); reportLead(slug, phone, 'save', work.id) }
+            else requireSignIn('save', () => visitor.saveWork(snapshot), text.title, work.id)
           }}>
           {isSaved ? t.saved : t.save}
         </button>

@@ -102,9 +102,11 @@ test.describe('sample gallery', () => {
     expect(await (await request.get('/g/sample')).text()).toMatch(/<html[^>]*lang="fa"[^>]*dir="rtl"/)
     expect(await (await request.get('/site/sample')).text()).toMatch(/<html[^>]*lang="fa"[^>]*dir="rtl"/)
 
+    const scan = page.waitForResponse((response) => response.url().includes('/api/v1/pilot') && response.request().method() === 'POST')
     await page.goto('/g/sample')
     await expect(page.locator('html')).toHaveAttribute('lang', 'fa')
     await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/g/sample/manifest.webmanifest')
+    await scan
   })
 
   test('a visit without a gallery is refused and leaves the counts alone', async ({ request }) => {

@@ -40,6 +40,38 @@ export function formatNumber(lang: Lang, value: number): string {
   return numberFormat(lang).format(value)
 }
 
+const percentFormats = new Map<string, Intl.NumberFormat>()
+
+export function formatPercent(lang: Lang, value: number, fractionDigits = 0): string {
+  const key = `${lang}:${fractionDigits}`
+  let format = percentFormats.get(key)
+  if (!format) {
+    format = new Intl.NumberFormat(NUMBER_LOCALE[lang], {
+      style: 'percent',
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    })
+    percentFormats.set(key, format)
+  }
+  return format.format(value / 100)
+}
+
+const weekdayFormats = new Map<Lang, Intl.DateTimeFormat>()
+
+export function formatWeekdayDay(lang: Lang, value: string): string {
+  const date = parseDay(value)
+  if (!date) return ''
+  let format = weekdayFormats.get(lang)
+  if (!format) {
+    format = new Intl.DateTimeFormat(DATE_LOCALE[lang], { weekday: 'short', day: 'numeric', timeZone: 'UTC' })
+    weekdayFormats.set(lang, format)
+  }
+  const parts = format.formatToParts(date)
+  const weekday = parts.find((part) => part.type === 'weekday')?.value ?? ''
+  const day = parts.find((part) => part.type === 'day')?.value ?? ''
+  return plainSpaces(`${weekday} ${day}`)
+}
+
 export function formatToman(lang: Lang, value: number, unit: string): string {
   return `${formatNumber(lang, value)} ${unit}`
 }
