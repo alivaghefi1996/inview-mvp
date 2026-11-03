@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { CONSENT_TEXT_VERSION } from '../app/lib/consent'
+import { hydrated } from './hydrated'
 import { seedCatalogue } from './seed-catalogue'
 
 const WORK_ID = 'phonework01'
@@ -15,6 +16,7 @@ type Lang = keyof typeof copy
 async function openWork(page: Page, lang: Lang, baseURL: string | undefined) {
   await page.context().addCookies([{ name: 'inview-lang', value: lang, url: baseURL || 'http://127.0.0.1:3000' }])
   await page.goto(WORK_PATH)
+  await hydrated(page)
 }
 
 async function openSheet(page: Page, lang: Lang, baseURL: string | undefined) {

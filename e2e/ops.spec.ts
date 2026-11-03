@@ -169,13 +169,13 @@ for (const width of [390, 1440]) {
           const [gallery] = await check`select id from galleries where slug = ${slug}`
           await check`insert into leads (gallery_id, phone, kind, consent_at, consent_text_version) values (${gallery.id}, '09125550077', 'ask', now(), '2026-11-01')`
           await supportPage.reload()
-          const row = supportPage.locator('.ops-member').filter({ hasText: '0912•••••34' })
+          const row = supportPage.locator('.ops-member').filter({ hasText: '+98912•••••34' })
           await row.locator('.ops-lead-delete summary').click()
           await row.locator('[name="deleteReason"]').fill('Visitor asked for deletion')
           await row.locator('.ops-lead-delete button').click()
           await expect(supportPage.getByRole('status')).toBeVisible()
-          await expect(supportPage.getByText('0912•••••34', { exact: true })).toHaveCount(0)
-          await expect(supportPage.getByText('0912•••••77', { exact: true })).toBeVisible()
+          await expect(supportPage.getByText('+98912•••••34', { exact: true })).toHaveCount(0)
+          await expect(supportPage.getByText('+98912•••••77', { exact: true })).toBeVisible()
           const remaining = await check`select phone, consent_text_version from leads where gallery_id = ${gallery.id}`
           expect(remaining.map((lead) => [lead.phone, lead.consent_text_version])).toEqual([['09125550077', '2026-11-01']])
           const deletes = await check`select summary, target_id from audit_logs where gallery_id = ${gallery.id} and action = 'lead-delete'`
