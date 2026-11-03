@@ -193,7 +193,7 @@ export function reportLead(
   phone: string,
   kind: 'save' | 'ask' | 'follow' | 'stamp',
   workId?: string,
-): Promise<'sent' | 'bad-phone'> {
+): Promise<'sent' | 'bad-phone' | 'refused'> {
   if (kind !== 'save' && kind !== 'ask') return Promise.resolve('sent')
   if (!workId || !gallery || !isDatabaseGallery(gallery)) return Promise.resolve('sent')
   return fetch('/api/v1/pilot', {
@@ -202,7 +202,10 @@ export function reportLead(
     body: JSON.stringify({ ...leadBody({ phone, kind, workId, visitorId: getVisitorId() }), gallery }),
   }).then(async (res) => {
     const body: { code?: string } = await res.json().catch(() => ({}))
-    if (body.code === CONSENT_STALE_CODE) visitor.refuseLead()
+    if (body.code === CONSENT_STALE_CODE) {
+      visitor.refuseLead()
+      return 'refused' as const
+    }
     return res.status === 400 && body.code === INVALID_PHONE_CODE ? 'bad-phone' as const : 'sent' as const
   }).catch(() => 'sent' as const)
 }

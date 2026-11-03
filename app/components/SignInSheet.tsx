@@ -88,12 +88,13 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
     setSending(true)
     const lead = reportLead(gallerySlug, e164, kind, workId)
     const waited = new Promise<'sent'>((resolve) => setTimeout(() => resolve('sent'), LEAD_WAIT_MS))
-    if (await Promise.race([lead, waited]) === 'bad-phone') {
+    const result = await Promise.race([lead, waited])
+    if (result === 'bad-phone') {
       setSending(false)
       setError(t.badPhone)
       return
     }
-    visitor.signIn(e164, CONSENT_TEXT_VERSION)
+    if (result !== 'refused') visitor.signIn(e164, CONSENT_TEXT_VERSION)
     onDone()
   }
 
