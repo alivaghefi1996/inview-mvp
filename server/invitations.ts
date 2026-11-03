@@ -17,7 +17,7 @@ export class InvalidInviteError extends Error {
 type InviteInput = { userId: string; createdBy?: string | null } & (
   | { kind: 'staff'; galleryId: string; role: MembershipRole }
   | { kind: 'operator'; platformRole: PlatformRole }
-  | { kind: 'reset'; galleryId?: string }
+  | { kind: 'reset'; galleryId?: string; ttlMs?: number }
 )
 
 async function auditInvite(
@@ -57,7 +57,7 @@ export async function createInvite(db: AccountDb, input: InviteInput) {
       galleryId: input.kind === 'operator' ? null : input.galleryId,
       role: input.kind === 'staff' ? input.role : null,
       platformRole: input.kind === 'operator' ? input.platformRole : null,
-      expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+      expiresAt: new Date(Date.now() + (input.kind === 'reset' && input.ttlMs ? input.ttlMs : INVITE_TTL_MS)),
     }).returning()
     await auditInvite(tx, invite, input.createdBy ?? null, 'invite-create')
     return { id: invite.id, token, expiresAt: invite.expiresAt }
@@ -70,15 +70,16 @@ function availableInvite(token: string) {
 
 export async function readInvite(db: Pick<AccountDb, 'select'>, token: string) {
   const [invite] = await db.select({
+    userName: users.name,
     kind: invitations.kind,
     galleryName: galleries.nameEn,
     galleryNameFa: galleries.nameFa,
     gallerySlug: galleries.slug,
     role: invitations.role,
     platformRole: invitations.platformRole,
-  }).from(invitations).leftJoin(galleries, eq(galleries.id, invitations.galleryId))
+  }).from(invitations).innerJoin(users, eq(users.id, invitations.userId)).leftJoin(galleries, eq(galleries.id, invitations.galleryId))
     .where(availableInvite(token)).limit(1)
-  return invite ? { kind: invite.kind, galleryName: invite.galleryName, galleryNameFa: invite.galleryNameFa, gallerySlug: invite.gallerySlug, role: invite.role ?? invite.platformRole } : null
+  return invite ? { ...(invite.kind === 'reset' && invite.userName ? { userName: invite.userName } : {}), kind: invite.kind, galleryName: invite.galleryName, galleryNameFa: invite.galleryNameFa, gallerySlug: invite.gallerySlug, role: invite.role ?? invite.platformRole } : null
 }
 
 export async function acceptInvite(db: AccountDb, token: string, name: string, password: string, secure = false) {
