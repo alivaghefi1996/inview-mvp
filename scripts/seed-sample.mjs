@@ -7,7 +7,7 @@ import postgres from 'postgres'
 import sharp from 'sharp'
 
 export const SAMPLE_SLUG = 'sample'
-export const CONSENT_TEXT_VERSION = '2026-11-01'
+export const CONSENT_TEXT_VERSION = '2026-11-02'
 export const VARIANT_WIDTHS = [320, 640, 1280]
 const SCRYPT_KEYLEN = 64
 const REPORT_DAYS = 30

@@ -187,6 +187,15 @@
       "screenshot": true
     },
     {
+      "id": "privacy",
+      "group": "visitor-pilot",
+      "label": "Privacy",
+      "labelFa": "حریم خصوصی",
+      "path": "/privacy",
+      "access": "public",
+      "screenshot": true
+    },
+    {
       "id": "staff-forgot-password",
       "group": "staff",
       "label": "Password reset",
@@ -282,6 +291,15 @@
       "label": "Operators",
       "labelFa": "اپراتورها",
       "path": "/ops/operators",
+      "access": "operator",
+      "screenshot": false
+    },
+    {
+      "id": "ops-inquiries",
+      "group": "operator",
+      "label": "Gallery inquiries",
+      "labelFa": "پیام گالری‌ها",
+      "path": "/ops/inquiries",
       "access": "operator",
       "screenshot": false
     },

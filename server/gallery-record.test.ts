@@ -212,6 +212,7 @@ test('the server returns 400 for a lead without consent', async () => {
     assert.equal(refused.status, 400)
     assert.equal(textConsent.status, 400)
     assert.equal(badVersion.status, 400)
+    assert.equal((badVersion.body as { code?: string }).code, 'consent-stale')
     assert.equal(missingVersion.status, 400)
     assert.equal((missing.body as { error: string }).error, 'Consent is required.')
     const rows = await db.select().from(schema.leads)

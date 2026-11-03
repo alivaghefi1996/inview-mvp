@@ -1,3 +1,4 @@
+import { PRIVACY_PATH } from './consent'
 import { DEMO_SLUG, gallerySurfaceSlug } from './galleries'
 export type Lang = 'en' | 'fa'
 export type Dir = 'rtl' | 'ltr'
@@ -13,7 +14,7 @@ function underPath(pathname: string, base: string): boolean {
 
 /** ADR 0002: a gallery opens in Persian, and the Rooz demo, its dashboard included, opens in English for sales. */
 export function defaultLang(pathname: string): Lang {
-  if (pathname === '/' || isBilingualStaffPath(pathname)) return 'fa'
+  if (pathname === '/' || pathname === PRIVACY_PATH || isBilingualStaffPath(pathname)) return 'fa'
   const slug = gallerySurfaceSlug(pathname)
   return slug && slug !== DEMO_SLUG ? 'fa' : 'en'
 }

@@ -1,8 +1,10 @@
+import { useState, type FormEvent } from 'react'
 import { Link, useRevalidator } from 'react-router'
 import { messages, useLang } from '../../lib/i18n'
 import { SkipLink } from '../../components/SkipLink'
 import { langCookie, type Lang } from '../../lib/lang'
 import { landingContact } from '../../lib/landing-contact'
+import { INQUIRY_CONSENT_VERSION } from '../../lib/consent'
 
 const DEMO_PATH = '/g/sample'
 
@@ -45,7 +47,15 @@ export const landingCopy = {
     telegram: 'تلگرام',
     phone: 'تماس تلفنی',
     email: 'پیام ایمیلی',
-    comingSoon: 'جزئیات تماس به‌زودی اعلام می‌شود',
+    formGallery: 'نام گالری',
+    formPerson: 'نام شما',
+    formContact: 'تلفن یا ایمیل',
+    formMessage: 'پیام شما',
+    formConsent: 'موافقم که اینویو این اطلاعات را برای پاسخ به این پیام ذخیره کند.',
+    formSend: 'ارسال پیام',
+    formSending: 'در حال ارسال',
+    formSent: 'پیام شما رسید. به‌زودی با شما تماس می‌گیریم.',
+    formFailed: 'پیام ارسال نشد. دوباره تلاش کنید.',
     staff: 'ورود کارکنان گالری',
     footer: 'صفحه نمایشگاه و فهرست قیمت برای گالری‌ها.',
   },
@@ -87,7 +97,15 @@ export const landingCopy = {
     telegram: 'Telegram',
     phone: 'Call us',
     email: 'Email us',
-    comingSoon: 'Contact details coming soon',
+    formGallery: 'Gallery name',
+    formPerson: 'Your name',
+    formContact: 'Phone or email',
+    formMessage: 'Your message',
+    formConsent: 'I agree that Inview may store these details to reply to this message.',
+    formSend: 'Send message',
+    formSending: 'Sending',
+    formSent: 'We received your message. We will contact you soon.',
+    formFailed: 'Your message was not sent. Try again.',
     staff: 'Gallery staff sign-in',
     footer: 'Show pages and price lists for galleries.',
   },
@@ -128,6 +146,61 @@ function PilotScreen({ screen, alt, eager = false }: { screen: (typeof screens)[
   )
 }
 
+function InquiryForm({ lang }: { lang: Lang }) {
+  const words = landingCopy[lang]
+  const [phase, setPhase] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [failure, setFailure] = useState<{ error?: string; errorFa?: string } | true | null>(null)
+  const failureText = failure && failure !== true ? (lang === 'fa' ? failure.errorFa : failure.error) : null
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (phase !== 'idle') return
+    const form = new FormData(event.currentTarget)
+    setPhase('sending')
+    setFailure(null)
+    try {
+      const response = await fetch('/api/v1/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          galleryName: form.get('galleryName'),
+          contactPerson: form.get('contactPerson'),
+          contact: form.get('contact'),
+          message: form.get('message'),
+          lang,
+          consent: form.get('consent') === 'on',
+          consentTextVersion: INQUIRY_CONSENT_VERSION,
+        }),
+      })
+      if (response.ok) {
+        setPhase('sent')
+        return
+      }
+      setFailure(await response.json().catch(() => true))
+    } catch {
+      setFailure(true)
+    }
+    setPhase('idle')
+  }
+
+  return (
+    <div className="landing-inquiry">
+      <div role="status">{phase === 'sent' && <p className="landing-inquiry-sent">{words.formSent}</p>}</div>
+      {phase !== 'sent' && (
+        <form className="landing-inquiry-form" onSubmit={submit}>
+          <label>{words.formGallery}<input name="galleryName" required maxLength={200} autoComplete="organization" /></label>
+          <label>{words.formPerson}<input name="contactPerson" required maxLength={200} autoComplete="name" /></label>
+          <label>{words.formContact}<input name="contact" required maxLength={320} dir="ltr" autoComplete="off" /></label>
+          <label>{words.formMessage}<textarea name="message" required maxLength={4000} rows={4} /></label>
+          <label className="landing-inquiry-consent"><input type="checkbox" name="consent" required /><span>{words.formConsent}</span></label>
+          {failure && <p className="landing-inquiry-error" role="alert">{failureText || words.formFailed}</p>}
+          <button className="btn btn-primary" type="submit" disabled={phase === 'sending'}>{phase === 'sending' ? words.formSending : words.formSend}</button>
+        </form>
+      )}
+    </div>
+  )
+}
+
 export default function InviewLanding({ contact = landingContact }: { contact?: typeof landingContact }) {
   const lang = useLang()
   const words = landingCopy[lang]
@@ -154,7 +227,7 @@ export default function InviewLanding({ contact = landingContact }: { contact?: 
             <p className="landing-lead">{words.intro}</p>
             <div className="landing-actions">
               <Link className="btn btn-primary" to={DEMO_PATH}>{words.demo}</Link>
-              {channels.length > 0 && <a className="btn btn-outline" href="#contact">{words.contact}</a>}
+              <a className="btn btn-outline" href="#contact">{words.contact}</a>
             </div>
             <p className="landing-note">{words.noApp}</p>
           </div>
@@ -216,15 +289,17 @@ export default function InviewLanding({ contact = landingContact }: { contact?: 
           <div className="landing-section-intro">
             <h2 id="landing-contact">{words.contactTitle}</h2>
             <p>{words.contactIntro}</p>
+            {channels.length > 0 && (
+              <div className="landing-contact-links">
+                {channels.map((channel, index) => (
+                  <a key={channel.href} className={`btn ${index === 0 ? 'btn-primary' : 'btn-outline'}${channel.phone ? ' landing-phone-link' : ''}`} href={channel.href}>
+                    <span>{channel.label}</span>{channel.phone && <bdi dir="ltr">{channel.phone}</bdi>}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="landing-contact-links">
-            {channels.map((channel, index) => (
-              <a key={channel.href} className={`btn ${index === 0 ? 'btn-primary' : 'btn-outline'}${channel.phone ? ' landing-phone-link' : ''}`} href={channel.href}>
-                <span>{channel.label}</span>{channel.phone && <bdi dir="ltr">{channel.phone}</bdi>}
-              </a>
-            ))}
-            {channels.length === 0 && <p className="landing-contact-empty">{words.comingSoon}</p>}
-          </div>
+          <InquiryForm lang={lang} />
         </section>
       </main>
       <footer className="landing-footer landing-width">

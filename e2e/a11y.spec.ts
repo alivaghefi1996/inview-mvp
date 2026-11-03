@@ -28,6 +28,7 @@ const publicRoutes = [
   '/site/o-gallery',
   '/site/rooz-gallery',
   '/me',
+  '/privacy',
   '/no-such-page',
   '/g/o-gallery/works/no-such-work',
   '/dashboard',

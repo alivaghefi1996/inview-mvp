@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router'
-import { CONSENT_TEXT_VERSION } from '../lib/consent'
+import { Link, useLocation } from 'react-router'
+import { CONSENT_TEXT_VERSION, PRIVACY_PATH } from '../lib/consent'
 import { DEMO_SLUG } from '../lib/galleries'
 import { gallerySlugFromPath, reportLead } from '../lib/pilot'
 import { visitor } from '../lib/store'
@@ -140,7 +140,7 @@ export function SignInSheet({ kind, subtitle, workId, onDone, onClose }: Props) 
             <button className="btn btn-primary" type="submit" disabled={sending}>{t.confirm}</button>
           </form>
         )}
-        <p className="privacy"><Lock size={16} />{t.privacy}</p>
+        <p className="privacy"><Lock size={16} /><span>{t.privacy} <Link to={PRIVACY_PATH} target="_blank" rel="noreferrer">{t.privacyLink}</Link></span></p>
         <button className="btn-text" onClick={onClose}>{t.notNow}</button>
       </div>
     </div>

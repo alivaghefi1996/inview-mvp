@@ -7,7 +7,7 @@ import { auditLogs, galleries, leads, qrCodes, shows, visits, works } from '../d
 import { createUser, createUserSession } from './accounts'
 import type { Principal } from './authz'
 import { createTestDb } from './test-db'
-import { createGalleryQr, exportGalleryLeads, galleryActivity, galleryLeads, galleryQrCodes, galleryQrSvg, requireLeadExport, revealLeadPhone } from './ops-data'
+import { createGalleryQr, deleteLeadNumber, exportGalleryLeads, galleryActivity, galleryLeads, galleryQrCodes, galleryQrSvg, requireLeadExport, revealLeadPhone } from './ops-data'
 import { ensureOGalleryTenant } from './gallery-bootstrap'
 import { leadsCsvForSession } from './gallery-record'
 import { loader as csvLoader } from '../app/routes/ops.galleries.leads-csv'
@@ -163,4 +163,45 @@ test('gallery data is isolated, phone reveal is audited and operator administrat
     await assert.rejects(galleryLeads(db, null, a.gallery.id), /Forbidden/)
     await assert.rejects(galleryActivity(db, null, a.gallery.id), /Forbidden/)
   } finally { await fixture.close() }
+})
+
+test('deleting a number removes its leads in one gallery, writes an audit row without the number and keeps old versions', async () => {
+  const fixture = await createTestDb()
+  const db = fixture.db as unknown as AppDatabase
+  try {
+    const user = await createUser(db, { email: 'delete-support@example.com', platformRole: 'support' })
+    const support: Principal = { kind: 'operator', userId: user.id, platformRole: 'support' }
+    const staff: Principal = { kind: 'staff', userId: user.id, memberships: [] }
+    const phone = '09121234534'
+    const [alpha] = await db.insert(galleries).values({ slug: 'delete-alpha', nameEn: 'a', nameFa: 'a' }).returning()
+    const [beta] = await db.insert(galleries).values({ slug: 'delete-beta', nameEn: 'b', nameFa: 'b' }).returning()
+    const row = (galleryId: string, number: string, kind: 'save' | 'ask') => ({ galleryId, phone: number, kind, consentAt: new Date(), consentTextVersion: '2026-11-01' })
+    const [target] = await db.insert(leads).values(row(alpha.id, phone, 'save')).returning()
+    await db.insert(leads).values([row(alpha.id, phone, 'ask'), row(alpha.id, '09125550077', 'ask'), row(beta.id, phone, 'ask')])
+
+    await assert.rejects(deleteLeadNumber(db, null, alpha.id, target.id, 'Visitor asked'))
+    await assert.rejects(deleteLeadNumber(db, staff, alpha.id, target.id, 'Visitor asked'))
+    await assert.rejects(deleteLeadNumber(db, support, alpha.id, target.id, '  '))
+    await assert.rejects(deleteLeadNumber(db, support, alpha.id, target.id, phone))
+    await assert.rejects(deleteLeadNumber(db, support, beta.id, target.id, 'Visitor asked'))
+    assert.equal((await db.select().from(leads)).length, 4)
+    assert.equal((await db.select().from(auditLogs)).length, 0)
+
+    assert.deepEqual(await deleteLeadNumber(db, support, alpha.id, target.id, 'Visitor asked'), { deleted: 2 })
+    const left = await db.select().from(leads)
+    assert.deepEqual(left.map((lead) => [lead.galleryId, lead.phone, lead.consentTextVersion]).sort(), [
+      [alpha.id, '09125550077', '2026-11-01'],
+      [beta.id, phone, '2026-11-01'],
+    ].sort())
+    const audits = await db.select().from(auditLogs).where(eq(auditLogs.action, 'lead-delete'))
+    assert.equal(audits.length, 1)
+    assert.equal(audits[0].actorUserId, user.id)
+    assert.equal(audits[0].galleryId, alpha.id)
+    assert.equal(audits[0].targetId, target.id)
+    assert.deepEqual(audits[0].summary, { reason: 'Visitor asked', rows: 2 })
+    assert.ok(!JSON.stringify(audits[0]).includes(phone))
+    await assert.rejects(deleteLeadNumber(db, support, alpha.id, target.id, 'Visitor asked'))
+  } finally {
+    await fixture.close()
+  }
 })

@@ -1,7 +1,8 @@
 import { pilotSeed as seedJson } from './pilot-seed'
 import { INVALID_PHONE_CODE } from './phone'
-import { leadBody } from './consent'
+import { CONSENT_STALE_CODE, leadBody } from './consent'
 import { isDatabaseGallery } from './galleries'
+import { visitor } from './store'
 import { QR_CODE_PATTERN, tehranDay } from './tehran-day'
 
 export type PilotStatus = 'available' | 'reserved' | 'sold'
@@ -201,6 +202,7 @@ export function reportLead(
     body: JSON.stringify({ ...leadBody({ phone, kind, workId, visitorId: getVisitorId() }), gallery }),
   }).then(async (res) => {
     const body: { code?: string } = await res.json().catch(() => ({}))
+    if (body.code === CONSENT_STALE_CODE) visitor.refuseLead()
     return res.status === 400 && body.code === INVALID_PHONE_CODE ? 'bad-phone' as const : 'sent' as const
   }).catch(() => 'sent' as const)
 }

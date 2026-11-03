@@ -22,18 +22,37 @@ export async function galleryLeads(db: AccountDb, principal: Principal | null, g
   return rows.map((row) => ({ ...row, phone: maskPhone(row.phone) }))
 }
 
-export async function revealLeadPhone(db: AccountDb, principal: Principal | null, galleryId: string, leadId: string, reason: string) {
-  const actor = requireOperator(principal)
-  if (leadPhoneAccess(actor, galleryId) === 'none') throw new PermissionError('Forbidden')
+function requireLeadReason(leadId: string, reason: string) {
   if (!/^[0-9a-f-]{36}$/.test(leadId) || !reason.trim() || reason.trim().length > 500 || (reason.match(/[0-9۰-۹٠-٩]/g)?.length ?? 0) >= 7) {
     throw new AccountInputError('Enter a reason without personal contact details.')
   }
+}
+
+export async function revealLeadPhone(db: AccountDb, principal: Principal | null, galleryId: string, leadId: string, reason: string) {
+  const actor = requireOperator(principal)
+  if (leadPhoneAccess(actor, galleryId) === 'none') throw new PermissionError('Forbidden')
+  requireLeadReason(leadId, reason)
   return db.transaction(async (tx) => {
     const [lead] = await tx.select({ phone: leads.phone }).from(leads)
       .where(and(eq(leads.galleryId, galleryId), eq(leads.id, leadId))).limit(1)
     if (!lead) throw new AccountInputError('Lead not found.')
     await writeAudit(tx, { actorUserId: actor.userId, galleryId, action: 'lead-reveal', targetType: 'lead', targetId: leadId, summary: { reason: reason.trim() } })
     return { leadId, phone: canonicalPhone(lead.phone) }
+  })
+}
+
+export async function deleteLeadNumber(db: AccountDb, principal: Principal | null, galleryId: string, leadId: string, reason: string) {
+  const actor = requireOperator(principal)
+  if (leadPhoneAccess(actor, galleryId) === 'none') throw new PermissionError('Forbidden')
+  requireLeadReason(leadId, reason)
+  return db.transaction(async (tx) => {
+    const [lead] = await tx.select({ phone: leads.phone }).from(leads)
+      .where(and(eq(leads.galleryId, galleryId), eq(leads.id, leadId))).limit(1)
+    if (!lead) throw new AccountInputError('Lead not found.')
+    const removed = await tx.delete(leads)
+      .where(and(eq(leads.galleryId, galleryId), eq(leads.phone, lead.phone))).returning({ id: leads.id })
+    await writeAudit(tx, { actorUserId: actor.userId, galleryId, action: 'lead-delete', targetType: 'lead', targetId: leadId, summary: { reason: reason.trim(), rows: removed.length } })
+    return { deleted: removed.length }
   })
 }
 

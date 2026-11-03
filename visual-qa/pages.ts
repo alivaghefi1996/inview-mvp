@@ -4,6 +4,7 @@ export const routes = [
   { name: 'gallery-works', path: '/g/sample/works' },
   { name: 'gallery-prices', path: '/g/sample/prices' },
   { name: 'gallery-about', path: '/g/sample/about' },
+  { name: 'site', path: '/site/sample' },
   { name: 'sign-in', path: '/dashboard/sign-in' },
   { name: 'not-found', path: '/no-such-page' },
 ] as const

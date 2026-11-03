@@ -35,6 +35,7 @@ export interface VisitorState {
   visitStamps: VisitStamp[]
   lastGallery: GalleryVisit | null
   consentVersion: string | null
+  leadRefused: boolean
 }
 
 const KEY = 'inview-demo-v1'
@@ -49,6 +50,7 @@ const empty: VisitorState = {
   visitStamps: [],
   lastGallery: null,
   consentVersion: null,
+  leadRefused: false,
 }
 
 const text = (value: unknown) => (typeof value === 'string' ? value : '')
@@ -101,6 +103,7 @@ export function parseVisitorState(raw: string | null): VisitorState {
           nameFa: text(stamp.nameFa),
         })),
       lastGallery: parseGalleryVisit(stored.lastGallery),
+      leadRefused: false,
     }
   } catch {
     return empty
@@ -159,6 +162,7 @@ const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter(
 export const visitor = {
   signIn: (phone: string, consentVersion: string) => set({ phone, consentVersion }),
   signOut: () => set({ phone: null, consentVersion: null }),
+  refuseLead: () => set({ consentVersion: null, leadRefused: true }),
   toggleSaved: (id: string) => set({ saved: toggle(state.saved, id), savedWorks: state.savedWorks.filter((work) => work.id !== id) }),
   save: (id: string) => !state.saved.includes(id) && set({ saved: [...state.saved, id] }),
   saveWork: (work: SavedWork) =>

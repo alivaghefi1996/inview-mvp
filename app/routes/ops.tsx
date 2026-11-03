@@ -18,7 +18,7 @@ export default function OpsLayout() {
     <header className="ops-header">
       <Link className="ops-brand" to="/ops">{t.brand}<span>{t.panel}</span></Link>
       <nav aria-label={t.panel}><Link to="/ops">{t.overview}</Link><Link to="/ops/galleries/new">{t.newGallery}</Link>
-        {manageOperators && <Link to="/ops/operators">{t.operators}</Link>}<Link to="/ops/audit">{t.audit}</Link><Link to="/ops/health">{t.health}</Link>
+        {manageOperators && <Link to="/ops/operators">{t.operators}</Link>}<Link to="/ops/inquiries">{t.inquiries}</Link><Link to="/ops/audit">{t.audit}</Link><Link to="/ops/health">{t.health}</Link>
       </nav>
       <StaffLangSwitch /><Form method="post" action="/ops/sign-out"><button className="btn btn-outline">{t.signOut}</button></Form>
     </header>
