@@ -34,7 +34,13 @@ export function isBilingualStaffPath(pathname: string): boolean {
   return BILINGUAL_STAFF.some((base) => underPath(pathname, base))
 }
 
+/** The Rooz demo website has English copy only and no language switch, so no cookie can set it to Persian. */
+export function isEnglishOnlyPath(pathname: string): boolean {
+  return underPath(pathname, `/site/${DEMO_SLUG}`)
+}
+
 export function resolveLang(pathname: string, cookieHeader: string | null | undefined): Lang {
+  if (isEnglishOnlyPath(pathname)) return 'en'
   return readLangCookie(cookieHeader) ?? defaultLang(pathname)
 }
 

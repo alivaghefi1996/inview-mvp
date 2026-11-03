@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useLoaderData, useParams } from 'react-router'
 import OGallerySite from './OGallerySite'
 import { EMPTY_PHONE, PhoneInput, type PhoneValue } from '../../components/PhoneInput'
@@ -21,12 +21,6 @@ function RoozWebsite() {
   const [result, setResult] = useState<'' | 'done' | 'error'>('')
   const available = artworks.filter((a) => a.status !== 'sold')
   const cover = artworks[1]
-
-  useEffect(() => {
-    document.title = `${gallery.name}: ${show.title}`
-    document.documentElement.lang = 'en'
-    document.documentElement.dir = 'ltr'
-  }, [])
 
   function follow(e: React.FormEvent) {
     e.preventDefault()

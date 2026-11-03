@@ -59,6 +59,16 @@ test.describe('server rendering', () => {
     expect(await english.text()).toMatch(/<html[^>]*lang="en"[^>]*dir="ltr"/)
   })
 
+  test('the Rooz demo website stays English under the Persian cookie', async ({ request }) => {
+    const response = await request.get('/site/rooz-gallery', { headers: { cookie: 'inview-lang=fa' } })
+    expect(response.status()).toBe(200)
+    const body = await response.text()
+    expect(body).toMatch(/<html[^>]*lang="en"[^>]*dir="ltr"/)
+    expect(body).toContain('<title>Rooz Gallery · Website</title>')
+    expect(body).toMatch(/<meta[^>]*property="og:locale"[^>]*content="en_US"/)
+    expect(body).not.toMatch(/lang="fa"|dir="rtl"/)
+  })
+
   test('public pages send the ADR D7 cache header', async ({ request }) => {
     const response = await request.get('/g/o-gallery/works')
     expect(response.headers()['cache-control']).toBe(

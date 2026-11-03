@@ -75,6 +75,10 @@ test('the language comes from the cookie, then from the path', () => {
   assert.equal(resolveLang('/g/o-gallery', 'inview-lang=en'), 'en')
   assert.equal(resolveLang('/g/rooz-gallery', 'inview-lang=fa'), 'fa')
   assert.equal(resolveLang('/g/o-gallery', 'other=1; inview-lang=en; more=2'), 'en')
+  // The Rooz demo website has English copy only, so the cookie cannot turn it Persian.
+  assert.equal(resolveLang('/site/rooz-gallery', 'inview-lang=fa'), 'en')
+  assert.equal(resolveLang('/site/rooz-gallery/', 'inview-lang=fa'), 'en')
+  assert.equal(resolveLang('/site/o-gallery', 'inview-lang=fa'), 'fa')
   assert.equal(resolveLang('/g/o-gallery', 'inview-lang=de'), 'fa')
 
   assert.equal(resolveLang('/dashboard', null), 'en')
