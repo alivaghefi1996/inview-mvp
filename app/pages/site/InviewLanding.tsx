@@ -112,11 +112,18 @@ function LandingLangSwitch() {
   )
 }
 
-function PilotScreen({ screen, alt }: { screen: (typeof screens)[number]; alt: string }) {
+function PilotScreen({ screen, alt, eager = false }: { screen: (typeof screens)[number]; alt: string; eager?: boolean }) {
   return (
     <picture>
       <source srcSet={`/landing/${screen}.webp`} type="image/webp" />
-      <img src={`/landing/${screen}.png`} alt={alt} width={540} height={1169} loading="eager" />
+      <img
+        src={`/landing/${screen}.png`}
+        alt={alt}
+        width={540}
+        height={1169}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchPriority={eager ? 'high' : 'low'}
+      />
     </picture>
   )
 }
@@ -154,7 +161,7 @@ export default function InviewLanding({ contact = landingContact }: { contact?: 
           <figure className="landing-exhibit">
             <span className="landing-exhibit-label">{words.preview}</span>
             <div className="landing-phone">
-              <PilotScreen screen="work" alt={words.screens[2]} />
+              <PilotScreen screen="work" alt={words.screens[2]} eager />
             </div>
             <figcaption>{words.previewCaption}</figcaption>
           </figure>

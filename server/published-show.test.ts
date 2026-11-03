@@ -90,16 +90,19 @@ async function postLead(app: ReturnType<typeof createApiApp>) {
 }
 
 for (const status of ['draft', 'archived'] as const) {
-  test(`a live gallery whose only show is ${status} answers 404 on every public path and counts nothing`, async () => {
+  test(`a live gallery whose only show is ${status} serves no catalogue and counts nothing`, async () => {
     await withLiveGallery(async ({ db, app, show, run }) => {
       await db.update(shows).set({ status }).where(eq(shows.id, show.id))
+      // A printed QR code of a gallery between two shows lands on a message. A gallery that never opened stays hidden.
+      const pageStatus = status === 'archived' ? 302 : 404
 
       for (const path of [`/g/${SLUG}`, `/g/${SLUG}/works`, `/g/${SLUG}/about`, `/g/${SLUG}/prices`, `/site/${SLUG}`]) {
         const answer = await rejection(run(() => loadGalleryPage(pageRequest(path), SLUG)))
-        assert.equal(answer.status, 404, path)
+        assert.equal(answer.status, pageStatus, path)
+        if (status === 'archived') assert.equal(answer.headers.get('location'), `/g/${SLUG}/closed`, path)
       }
       const work = await rejection(run(() => loadWorkPage(pageRequest(`/g/${SLUG}/works/${WORK_ID}`), SLUG, WORK_ID)))
-      assert.equal(work.status, 404)
+      assert.equal(work.status, pageStatus)
 
       assert.equal((await request(app).get(`/api/v1/pilot?gallery=${SLUG}`)).status, 404)
       assert.equal((await postVisit(app, 'scan')).status, 404)

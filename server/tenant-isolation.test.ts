@@ -1,12 +1,16 @@
+import { createElement, type FunctionComponent } from 'react'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { eq } from 'drizzle-orm'
 import request from 'supertest'
 import { CONSENT_TEXT_VERSION, leadBody } from '../app/lib/consent.ts'
+import { staffT } from '../app/lib/i18n-staff.ts'
 import { loadGalleryPage, loadWorkPage } from '../app/routes/pilot.server.ts'
+import StaffQr, { loader as staffQrLoader } from '../app/routes/staff.qr.tsx'
+import StaffTeam, { loader as staffTeamLoader } from '../app/routes/staff.team.tsx'
 import { DatabaseContext, type AppDatabase } from '../database/context.ts'
-import { auditLogs, galleries, leads, media, memberships, qrCodes, shows, showWorks, visits, works } from '../database/schema.ts'
+import { auditLogs, galleries, leads, media, memberships, qrCodes, shows, showWorks, users, visits, works } from '../database/schema.ts'
 import { createUser, createUserSession } from './accounts.ts'
 import { createApiApp } from './api-app.ts'
 import { hashSecret } from './crypto.ts'
@@ -25,6 +29,7 @@ import {
 import { rateLimitConfig, runPilotRequest } from './rate-limit.ts'
 import { signInWithAccessCode } from './staff-session.ts'
 import { createTestDb } from './test-db.ts'
+import { renderStaff } from './test-render.ts'
 
 process.env.PUBLIC_APP_URL = 'http://localhost'
 process.env.PUBLIC_RECORD_TTL_MS = '0'
@@ -224,6 +229,75 @@ for (const index of [0, 1]) {
       }
       assert.equal((await request(f.app).post('/api/v1/uploads').set('Cookie', cookies.shared).send({ gallery: slug, dataBase64: PNG })).status, 401)
       assert.equal((await request(f.app).get('/api/v1/pilot/staff').query({ gallery: slug }).set('Cookie', cookies.shared)).status, 401)
+    } finally { await f.close() }
+  })
+}
+
+for (const index of [0, 1]) {
+  test(`tenant ${index} staff QR and team pages show only its own scan counts, status and last sign-in`, async () => {
+    const f = await fixture()
+    const db = f.db as unknown as AppDatabase
+    try {
+      const own = f.tenants[index]
+      const other = f.tenants[1 - index]
+      const slug = own.tenant.gallery.slug
+      const [quiet] = await db.insert(qrCodes).values({ showId: own.tenant.show.id, code: `${slug}-quiet`, label: `${slug} quiet` }).returning()
+      for (const visitor of ['second-visitor', 'third-visitor']) assert.equal((await recordVisit(db, own.tenant, 'scan', visitor, null, own.qr.code)).status, 200)
+      assert.equal((await recordVisit(db, own.tenant, 'scan', 'no-code-visitor')).status, 200)
+      assert.equal((await recordVisit(db, own.tenant, 'scan', 'foreign-code-visitor', null, other.qr.code)).status, 200)
+      await db.insert(visits).values({ showId: own.tenant.show.id, kind: 'view', visitorId: 'quiet-visitor', qrCodeId: quiet.id, day: '2026-11-02' })
+
+      const signedInAt = '2026-10-30T08:15:00.000Z'
+      const roster = [
+        { key: 'active', status: 'active', lastSignedInAt: new Date(signedInAt), gallery: own },
+        { key: 'invited', status: 'invited', lastSignedInAt: null, gallery: own },
+        { key: 'disabled', status: 'disabled', lastSignedInAt: null, gallery: own },
+        { key: 'foreign', status: 'active', lastSignedInAt: new Date('2026-10-01T08:15:00.000Z'), gallery: other },
+      ] as const
+      const ids: Record<string, string> = {}
+      for (const member of roster) {
+        const user = await createUser(db, { email: `${member.key}@team.test`, password: 'account-password', name: `${slug}-${member.key}-person`, status: member.status })
+        ids[member.key] = user.id
+        await db.insert(memberships).values({ userId: user.id, galleryId: member.gallery.tenant.gallery.id, role: member.key === 'active' ? 'owner' : 'viewer' })
+        await db.update(users).set({ lastSignedInAt: member.lastSignedInAt }).where(eq(users.id, user.id))
+      }
+      const owner = (await createUserSession(db, ids.active, false)).cookie
+      await db.update(users).set({ lastSignedInAt: new Date(signedInAt) }).where(eq(users.id, ids.active))
+      const invoke = <T>(loader: (args: { request: Request; params: { slug: string } }) => Promise<T>, path: string, cookie: string, gallery = slug) =>
+        DatabaseContext.run(db, () => loader({ request: new Request(`http://localhost/staff/${gallery}/${path}`, { headers: { cookie } }), params: { slug: gallery } }))
+
+      for (const cookie of [owner, own.cookie]) {
+        const qr = await invoke(staffQrLoader, 'qr', cookie)
+        assert.deepEqual(Object.fromEntries(qr.codes.map((code) => [code.code, code.scans])), { [own.qr.code]: 3, [quiet.code]: 0 })
+        assert.equal(JSON.stringify(qr).includes(other.qr.code), false)
+      }
+      const team = await invoke(staffTeamLoader, 'team', owner)
+      assert.deepEqual(
+        team.team.map((member) => [member.userId, member.status, member.lastSignedInAt && new Date(member.lastSignedInAt).toISOString()]).sort(),
+        [[ids.active, 'active', signedInAt], [ids.invited, 'invited', null], [ids.disabled, 'disabled', null]].sort(),
+      )
+      assert.equal(JSON.stringify(team).includes(ids.foreign), false)
+
+      for (const [loader, path] of [[staffQrLoader, 'qr'], [staffTeamLoader, 'team']] as const) {
+        await assert.rejects(invoke<unknown>(loader, path, owner, other.tenant.gallery.slug), (error: unknown) => error instanceof Response && error.status === 403)
+      }
+      const foreignSession = await signInWithAccessCode(db, other.code, other.tenant.gallery.slug)
+      await assert.rejects(invoke<unknown>(staffQrLoader, 'qr', `inview_staff=${foreignSession!.token}`), (error: unknown) => error instanceof Response && error.status === 403)
+
+      for (const lang of ['en', 'fa'] as const) {
+        const { t, format } = staffT(lang)
+        const scans = (count: number) => `${t.scans}: ${format.number(count)}`
+        const page = (element: FunctionComponent, path: string, data: object) => renderStaff(createElement(element), lang, `/staff/${slug}/${path}`, undefined, data).replaceAll('<!-- -->', '')
+        const qrHtml = page(StaffQr, 'qr', await invoke(staffQrLoader, 'qr', owner))
+        assert.ok(qrHtml.includes(scans(3)), `${lang} scans of the used code`)
+        assert.ok(qrHtml.includes(scans(0)), `${lang} scans of the unused code`)
+        assert.equal(qrHtml.includes(other.qr.code), false)
+        const teamHtml = page(StaffTeam, 'team', await invoke(staffTeamLoader, 'team', owner))
+        for (const status of ['active', 'invited', 'disabled'] as const) assert.ok(teamHtml.includes(`${t[status]} · `), `${lang} ${status} status`)
+        assert.ok(teamHtml.includes(`${t.lastSignIn}: ${format.dateTime(signedInAt)}`), `${lang} last sign-in`)
+        assert.ok(teamHtml.includes(`${t.lastSignIn}: ${t.never}`), `${lang} no sign-in yet`)
+        assert.equal(teamHtml.includes(`${slug}-foreign-person`), false)
+      }
     } finally { await f.close() }
   })
 }

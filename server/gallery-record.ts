@@ -13,6 +13,7 @@ import {
   works,
 } from '../database/schema'
 import { CONSENT_TEXT_VERSION } from '../app/lib/consent'
+import { localDigits } from '../app/lib/format'
 import { parseToman } from '../app/lib/price'
 import {
   GALLERY_TIME_ZONE,
@@ -144,7 +145,7 @@ async function withLatestShow(db: Db, gallery: typeof galleries.$inferSelect): P
     .select()
     .from(shows)
     .where(eq(shows.galleryId, gallery.id))
-    .orderBy(sql`${shows.status} = 'published' DESC`, desc(shows.updatedAt))
+    .orderBy(sql`${shows.status} = 'published' DESC`, sql`${shows.status} = 'draft' DESC`, desc(shows.updatedAt))
     .limit(1)
   if (!show) return null
   return { gallery, show }
@@ -297,12 +298,12 @@ async function readVisitCounts(db: Db, showId: string): Promise<GalleryStateDto[
   return { scans: Number(scanRow?.value || 0), views: Number(viewRow?.value || 0) }
 }
 
-async function readLeadList(db: Db, galleryId: string, limit = 200): Promise<StaffLeadDto[]> {
+async function readLeadList(db: Db, galleryId: string, showId: string, limit = 200): Promise<StaffLeadDto[]> {
   const rows = await db
     .select({ lead: leads, workTitle: works.title })
     .from(leads)
     .leftJoin(works, and(eq(leads.workId, works.id), eq(works.galleryId, galleryId)))
-    .where(eq(leads.galleryId, galleryId))
+    .where(and(eq(leads.galleryId, galleryId), eq(leads.showId, showId)))
     .orderBy(desc(leads.createdAt))
     .limit(limit)
   return rows.map((row: { lead: typeof leads.$inferSelect; workTitle: string | null }) => ({
@@ -316,8 +317,9 @@ async function readLeadList(db: Db, galleryId: string, limit = 200): Promise<Sta
   }))
 }
 
-async function readDays(db: Db, showId: string, now = new Date()): Promise<StaffDayDto[]> {
-  const since = new Date(now.getTime() - REPORT_DAYS * 24 * 60 * 60 * 1000)
+/** An archived show has no recent days, so its table lists its whole run. */
+async function readDays(db: Db, showId: string, wholeRun: boolean, now = new Date()): Promise<StaffDayDto[]> {
+  const since = new Date(wholeRun ? 0 : now.getTime() - REPORT_DAYS * 24 * 60 * 60 * 1000)
   const rows = await db
     .select({ kind: visits.kind, createdAt: visits.createdAt })
     .from(visits)
@@ -346,7 +348,7 @@ async function readWorkStats(db: Db, galleryId: string, showId: string): Promise
   const leadRows = await db
     .select({ workId: leads.workId, kind: leads.kind, value: count() })
     .from(leads)
-    .where(eq(leads.galleryId, galleryId))
+    .where(and(eq(leads.galleryId, galleryId), eq(leads.showId, showId)))
     .groupBy(leads.workId, leads.kind)
   const stats = new Map<string, StaffWorkDto>()
   for (const row of workRows as Array<{ id: string; title: string }>) {
@@ -447,6 +449,18 @@ async function readPublicPage(
   return value
 }
 
+/** A live gallery between two shows. Its printed QR codes land on a message and not on a 404. */
+export async function galleryBetweenShows(db: Db, slug: string): Promise<{ nameEn: string; nameFa: string } | null> {
+  if (!GALLERY_SLUG_PATTERN.test(slug)) return null
+  const [row] = await db
+    .select({ nameEn: galleries.nameEn, nameFa: galleries.nameFa })
+    .from(galleries)
+    .innerJoin(shows, eq(shows.galleryId, galleries.id))
+    .where(and(eq(galleries.slug, slug), eq(galleries.status, 'live'), eq(shows.status, 'archived')))
+    .limit(1)
+  return row ?? null
+}
+
 /** Public catalogue only. This function does not read visits or leads. */
 export function loadPublicPage(db: Db, slug: string, now: number = Date.now()): Promise<PublicPage | null> {
   const store = cacheFor(db)
@@ -479,20 +493,35 @@ type StaffReportBody = Omit<GalleryStateDto, 'record'>
 
 type StaffReportResult =
   | { status: 200; body: StaffReportBody }
-  | { status: 401; body: { error: string } }
+  | { status: 401 | 404; body: { error: string } }
+
+const SHOW_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Without `showId`, the tenant keeps its current show. A show of another gallery resolves to null. */
+export async function tenantWithShow(db: Db, tenant: GalleryTenant, showId?: string | null): Promise<GalleryTenant | null> {
+  if (!showId) return tenant
+  if (!SHOW_ID_PATTERN.test(showId)) return null
+  const [show] = await db
+    .select()
+    .from(shows)
+    .where(and(eq(shows.id, showId), eq(shows.galleryId, tenant.gallery.id)))
+    .limit(1)
+  return show ? { gallery: tenant.gallery, show } : null
+}
 
 async function staffReportForTenant(
   db: Db,
   galleryId: string,
   showId: string,
+  wholeRun = false,
 ): Promise<StaffReportResult> {
   return {
     status: 200,
     body: {
       visits: await readVisitCounts(db, showId),
-      days: await readDays(db, showId),
+      days: await readDays(db, showId, wholeRun),
       works: await readWorkStats(db, galleryId, showId),
-      leads: await readLeadList(db, galleryId),
+      leads: await readLeadList(db, galleryId, showId),
     },
   }
 }
@@ -505,16 +534,22 @@ export async function readStaffReport(db: Db, tenant: GalleryTenant, accessCode:
   return staffReportForTenant(db, gallery.id, show.id)
 }
 
-export async function readStaffReportForSession(db: Db, galleryId: string): Promise<StaffReportResult> {
+export async function readStaffReportForSession(db: Db, galleryId: string, showId?: string | null): Promise<StaffReportResult> {
   const tenant = await tenantById(db, galleryId)
   if (!tenant) {
     return { status: 401, body: { error: 'Sign in to see visits and phone numbers.' } }
   }
-  return staffReportForTenant(db, tenant.gallery.id, tenant.show.id)
+  const selected = await tenantWithShow(db, tenant, showId)
+  if (!selected) return { status: 404, body: { error: 'That show was not found.' } }
+  return staffReportForTenant(db, tenant.gallery.id, selected.show.id, selected.show.status === 'archived')
 }
 
 const DUPLICATE_WORK_ERROR = 'Two works have the same id. Give each work its own id.'
 const DUPLICATE_WORK_ERROR_FA = 'دو اثر شناسه یکسان دارند. برای هر اثر شناسه جداگانه بگذارید.'
+
+export const MAX_WORKS = 100
+const TOO_MANY_WORKS_ERROR = `You can publish up to ${MAX_WORKS} works.`
+const TOO_MANY_WORKS_ERROR_FA = `حداکثر ${localDigits('fa', String(MAX_WORKS))} اثر می‌توانید منتشر کنید.`
 
 function sanitizeRecord(
   input: unknown,
@@ -524,7 +559,7 @@ function sanitizeRecord(
   const name = text(body.name, 80)
   if (!name) return { error: 'Enter the gallery name.' }
   if (!Array.isArray(body.works)) return { error: 'Works must be a list.' }
-  if (body.works.length > 40) return { error: 'You can publish up to 40 works.' }
+  if (body.works.length > MAX_WORKS) return { error: TOO_MANY_WORKS_ERROR, errorFa: TOO_MANY_WORKS_ERROR_FA }
 
   const worksOut: GalleryWorkDto[] = []
   const usedIds = new Set<string>()
@@ -680,12 +715,15 @@ export async function publishGalleryRecordForSession(
   _storage: ObjectStorage,
   galleryId: string,
   input: unknown,
+  showId?: string | null,
 ): Promise<PublishResult> {
   const tenant = await tenantById(db, galleryId)
   if (!tenant) {
     return { status: 401, body: { error: 'Sign in to publish.' } }
   }
-  return writeGalleryRecord(db, tenant, input)
+  const selected = await tenantWithShow(db, tenant, showId)
+  if (!selected) return { status: 404, body: { error: 'That show was not found.', errorFa: 'نمایش پیدا نشد.' } }
+  return writeGalleryRecord(db, selected, input)
 }
 
 async function writeGalleryRecord(
@@ -694,6 +732,7 @@ async function writeGalleryRecord(
   input: unknown,
 ): Promise<PublishResult> {
   const { gallery, show } = tenant
+  if (show.status === 'archived') return refuse('An archived show cannot change. Start a new show.', 'نمایش بایگانی‌شده تغییر نمی‌کند. نمایش تازه‌ای شروع کنید.')
   const target = input && typeof input === 'object' ? (input as { slug?: unknown }).slug : undefined
   if (target !== undefined && target !== gallery.slug) return refuse('That record belongs to another gallery.', 'این اطلاعات متعلق به گالری دیگری است.')
   const cleaned = sanitizeRecord(input)
@@ -787,16 +826,17 @@ async function writeGalleryRecord(
         })
         .where(eq(shows.id, show.id))
 
+      // Only this show's own works can leave. The works of another show of the gallery stay.
+      const dropped = await tx
+        .select({ id: showWorks.workId })
+        .from(showWorks)
+        .where(eq(showWorks.showId, show.id))
       await tx.delete(showWorks).where(eq(showWorks.showId, show.id))
-      const existingWorks = await tx
-        .select({ id: works.id })
-        .from(works)
-        .where(and(eq(works.galleryId, gallery.id), isNull(works.removedAt)))
       const removedAt = new Date()
-      for (const row of existingWorks) {
-        if (!keep.has(row.id)) {
-          await tx.update(works).set({ removedAt }).where(and(eq(works.id, row.id), eq(works.galleryId, gallery.id)))
-        }
+      for (const row of dropped) {
+        if (keep.has(row.id)) continue
+        const [elsewhere] = await tx.select({ id: showWorks.id }).from(showWorks).where(eq(showWorks.workId, row.id)).limit(1)
+        if (!elsewhere) await tx.update(works).set({ removedAt }).where(and(eq(works.id, row.id), eq(works.galleryId, gallery.id)))
       }
 
       let order = 0
@@ -834,7 +874,7 @@ async function writeGalleryRecord(
     })
 
     clearPublicRecordCache(db)
-    const fresh = (await tenantById(db, gallery.id))!
+    const fresh = (await tenantWithShow(db, (await tenantById(db, gallery.id))!, show.id))!
     return { status: 200, body: { ok: true, record: await readRecord(db, fresh.gallery, fresh.show) } }
   } catch (error) {
     console.error(error)
@@ -864,7 +904,8 @@ export async function recordVisit(
       const [qr] = await db
         .select({ id: qrCodes.id })
         .from(qrCodes)
-        .where(and(eq(qrCodes.code, qrCode), eq(qrCodes.showId, show.id)))
+        .innerJoin(shows, eq(shows.id, qrCodes.showId))
+        .where(and(eq(qrCodes.code, qrCode), eq(shows.galleryId, gallery.id)))
         .limit(1)
       qrCodeId = qr?.id ?? null
     }
@@ -1000,9 +1041,11 @@ export function leadsCsv(rows: LeadCsvRow[]): string {
   return `\uFEFF${lines.join('\r\n')}\r\n`
 }
 
-export async function leadsCsvForSession(db: Db, galleryId: string): Promise<{ status: 200; body: string } | { status: 401; body: { error: string } }> {
+export async function leadsCsvForSession(db: Db, galleryId: string, showId?: string | null): Promise<{ status: 200; body: string } | { status: 401 | 404; body: { error: string } }> {
   const tenant = await tenantById(db, galleryId)
   if (!tenant) return { status: 401, body: { error: 'Sign in to download the leads.' } }
-  const rows = await readLeadList(db, tenant.gallery.id, 10000)
+  const selected = await tenantWithShow(db, tenant, showId)
+  if (!selected) return { status: 404, body: { error: 'That show was not found.' } }
+  const rows = await readLeadList(db, tenant.gallery.id, selected.show.id, 10000)
   return { status: 200, body: leadsCsv(rows) }
 }

@@ -42,7 +42,9 @@ export default function InviteAccept() {
           else window.location.replace(result.user.platformRole ? '/ops' : `/staff/${encodeURIComponent(invite.gallerySlug ?? '')}`)
         } catch { setError(t.error) } finally { setBusy(false) }
       }}>
-        <label>{t.name}<input name="name" autoComplete="name" maxLength={200} required /></label>
+        {'userName' in invite && invite.userName
+          ? <input type="hidden" name="name" value={invite.userName} />
+          : <label>{t.name}<input name="name" autoComplete="name" maxLength={200} required /></label>}
         <label>{t.password}<input name="password" type="password" autoComplete="new-password" minLength={10} maxLength={1024} required dir="ltr" aria-describedby="password-hint" /></label>
         <p id="password-hint">{t.passwordHint}</p>
         {error && <p className="error" role="alert">{error}</p>}

@@ -49,6 +49,28 @@ async function waitForFonts(page: Page) {
   })
 }
 
+// A full-page screenshot captures beyond the viewport without scrolling, so a lazy image
+// below the fold would still be blank. Walk the page down and wait for every image.
+async function loadLazyImages(page: Page) {
+  await page.evaluate(async () => {
+    for (let top = 0; top < document.body.scrollHeight; top += innerHeight) {
+      scrollTo(0, top)
+      await new Promise((frame) => requestAnimationFrame(frame))
+    }
+    scrollTo(0, 0)
+    await Promise.all(
+      Array.from(document.images, (image) =>
+        image.complete
+          ? null
+          : new Promise((done) => {
+              image.addEventListener('load', done, { once: true })
+              image.addEventListener('error', done, { once: true })
+            }),
+      ),
+    )
+  })
+}
+
 test.describe('visual landing', () => {
   for (const vp of viewports) {
     for (const lang of langs) {
@@ -58,6 +80,7 @@ test.describe('visual landing', () => {
         await page.goto('/', { waitUntil: 'load' })
         await waitForFonts(page)
         await expect(page.locator('.landing')).toBeVisible()
+        await loadLazyImages(page)
         await expect(page).toHaveScreenshot(`landing-${vp.name}-${lang}.png`, {
           animations: 'disabled',
           fullPage: true,

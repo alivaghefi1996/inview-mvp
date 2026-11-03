@@ -1,5 +1,5 @@
 import { database } from '../../database/context'
-import { galleryNotFound, loadPublicPage } from '../../server/gallery-record'
+import { galleryBetweenShows, galleryNotFound, loadPublicPage } from '../../server/gallery-record'
 import { artworks } from '../data/gallery'
 import { DEMO_SLUG } from '../lib/galleries'
 import type { GalleryPageData, PilotRecord, PilotWork } from '../lib/pilot'
@@ -25,7 +25,10 @@ export async function loadGalleryPage(
     console.error('Gallery loader failed', error)
     throw unavailable()
   }
-  if (!page) throw notFound()
+  if (!page) {
+    if (await galleryBetweenShows(database(), slug)) throw new Response(null, { status: 302, headers: { 'Cache-Control': 'no-store', Location: `/g/${slug}/closed` } })
+    throw notFound()
+  }
   return { pilot: page.record }
 }
 

@@ -35,8 +35,12 @@ export const LEADS_CSV_PATH = '/api/v1/pilot/staff/leads.csv'
 export const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 const ACCEPTED = /^image\/(png|jpeg|webp)$/
 
-export async function fetchStaffReport(gallery: string): Promise<StaffReport> {
-  const res = await fetch(`/api/v1/pilot/staff?gallery=${encodeURIComponent(gallery)}`, { cache: 'no-store' })
+export function staffShowQuery(gallery: string, showId?: string): string {
+  return `gallery=${encodeURIComponent(gallery)}${showId ? `&show=${encodeURIComponent(showId)}` : ''}`
+}
+
+export async function fetchStaffReport(gallery: string, showId?: string): Promise<StaffReport> {
+  const res = await fetch(`/api/v1/pilot/staff?${staffShowQuery(gallery, showId)}`, { cache: 'no-store' })
   if (!res.ok) throw new Error(String(res.status))
   return res.json()
 }
