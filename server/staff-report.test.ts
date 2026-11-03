@@ -104,10 +104,10 @@ test('HAD-35 the CSV lists each lead with the work title and blocks spreadsheet 
       'created_at_utc_iso,created_at_tehran_gregorian,created_at_tehran_jalali,kind,phone,work_id,work_title,consent_text_version,verified',
     )
     assert.equal(lines.length, 3)
-    assert.ok(lines.some((line) => line.includes('09120000001') && line.includes(`"'=HYPERLINK(""x"")"`)))
-    const formulaRow = lines.find((line) => line.includes('09120000001'))!
+    assert.ok(lines.some((line) => line.includes('+989120000001') && line.includes(`"'=HYPERLINK(""x"")"`)))
+    const formulaRow = lines.find((line) => line.includes('+989120000001'))!
     assert.ok(formulaRow.startsWith('2026-11-01T20:30:00.000Z,2026-11-02 00:00,1405-08-11 00:00,ask,'))
-    assert.ok(lines.some((line) => line.includes('09120000002') && line.includes('"Harbour, light"')))
+    assert.ok(lines.some((line) => line.includes('+989120000002') && line.includes('"Harbour, light"')))
   })
 })
 

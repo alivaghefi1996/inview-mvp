@@ -1,4 +1,5 @@
 import { pilotSeed as seedJson } from './pilot-seed'
+import { INVALID_PHONE_CODE } from './phone'
 import { CONSENT_STALE_CODE, leadBody } from './consent'
 import { isDatabaseGallery } from './galleries'
 import { visitor } from './store'
@@ -192,16 +193,19 @@ export function reportLead(
   phone: string,
   kind: 'save' | 'ask' | 'follow' | 'stamp',
   workId?: string,
-) {
-  if (kind !== 'save' && kind !== 'ask') return
-  if (!workId || !gallery || !isDatabaseGallery(gallery)) return
-  void fetch('/api/v1/pilot', {
+): Promise<'sent' | 'bad-phone' | 'refused'> {
+  if (kind !== 'save' && kind !== 'ask') return Promise.resolve('sent')
+  if (!workId || !gallery || !isDatabaseGallery(gallery)) return Promise.resolve('sent')
+  return fetch('/api/v1/pilot', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...leadBody({ phone, kind, workId, visitorId: getVisitorId() }), gallery }),
   }).then(async (res) => {
-    if (res.ok) return readBody(res)
-    const body = (await res.json()) as { code?: string }
-    if (body.code === CONSENT_STALE_CODE) visitor.refuseLead()
-  }).catch(() => {})
+    const body: { code?: string } = await res.json().catch(() => ({}))
+    if (body.code === CONSENT_STALE_CODE) {
+      visitor.refuseLead()
+      return 'refused' as const
+    }
+    return res.status === 400 && body.code === INVALID_PHONE_CODE ? 'bad-phone' as const : 'sent' as const
+  }).catch(() => 'sent' as const)
 }

@@ -93,7 +93,7 @@ test('draft preview, report phone privacy, QR scope and audits use the current t
   try {
     const { gallery, show } = f.tenants[0]
     await f.db.insert(leads).values({ galleryId: gallery.id, showId: show.id, phone: '09123456789', kind: 'ask', consentAt: new Date(), consentTextVersion: 'v1' })
-    for (const [role, phone] of Object.entries({ owner: '09123456789', editor: '09123456789', admin: '09123456789', support: '0912•••••89', viewer: '', shared: '' })) {
+    for (const [role, phone] of Object.entries({ owner: '+989123456789', editor: '+989123456789', admin: '+989123456789', support: '+98912•••••89', viewer: '', shared: '' })) {
       const value = await f.invoke(report, role)
       assert.equal(value.report.leads[0].phone, phone)
       assert.equal(JSON.stringify(value).includes('accessCodeHash'), false)

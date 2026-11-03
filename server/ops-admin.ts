@@ -1,8 +1,9 @@
-import { and, desc, eq, isNotNull, isNull, sql, count } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, isNull, sql, count, inArray } from 'drizzle-orm'
 import type { AppDatabase } from '../database/context'
 import { auditLogs, galleries, invitations, media, rateLimits, sessions, users } from '../database/schema'
 import { tehranDay } from '../app/lib/tehran-day'
 import { AccountInputError, createUser, normalizePhone, type AccountDb } from './accounts'
+import { phoneLookupForms } from './phone'
 import { writeAudit } from './audit'
 import { can, type PlatformRole, type Principal } from './authz'
 import { createInvite } from './invitations'
@@ -35,7 +36,7 @@ export async function inviteOperator(db: AccountDb, principal: Principal | null,
   const phone = email ? null : normalizePhone(identifier)
   return db.transaction(async (tx) => {
     const [existing] = await tx.select({ id: users.id }).from(users)
-      .where(email ? sql`lower(${users.email}) = ${email}` : eq(users.phone, phone!)).limit(1)
+      .where(email ? sql`lower(${users.email}) = ${email}` : inArray(users.phone, phoneLookupForms(phone!))).limit(1)
     if (existing) throw new AccountInputError('Account already exists.')
     const user = await createUser(tx, { email, phone, platformRole: role, status: 'invited' })
     const invite = await createInvite(tx, { kind: 'operator', userId: user.id, platformRole: role, createdBy: actor.userId })

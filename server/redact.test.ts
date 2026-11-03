@@ -3,6 +3,12 @@ import assert from 'node:assert/strict'
 import { redact, requestPath } from './redact.js'
 import { installProcessLog } from './http-log.js'
 
+test('international numbers are redacted in every written form', () => {
+  for (const number of ['+4915112345678', '%2B4915112345678', '004915112345678', '+989121234567', '09121234567']) {
+    assert.equal(redact(`failed for ${number} today`), 'failed for [redacted] today')
+  }
+})
+
 test('request logs drop the query string, the phone and the access code', () => {
   assert.equal(requestPath('/api/v1/pilot?accessCode=alpha-code&phone=09120000000'), '/api/v1/pilot')
   assert.equal(

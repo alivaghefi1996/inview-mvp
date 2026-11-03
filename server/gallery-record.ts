@@ -1,4 +1,6 @@
 import { and, asc, count, desc, eq, gte, isNull, sql } from 'drizzle-orm'
+import { INVALID_PHONE_CODE, canonicalPhone, isE164 } from '../app/lib/phone'
+import { mobilePhone } from './phone'
 /** Drizzle database handle (Postgres.js in production, PGlite in tests). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = any
@@ -307,7 +309,7 @@ async function readLeadList(db: Db, galleryId: string, showId: string, limit = 2
     .orderBy(desc(leads.createdAt))
     .limit(limit)
   return rows.map((row: { lead: typeof leads.$inferSelect; workTitle: string | null }) => ({
-    phone: row.lead.phone,
+    phone: canonicalPhone(row.lead.phone),
     kind: row.lead.kind,
     at: row.lead.consentAt.toISOString(),
     workId: row.lead.workId,
@@ -957,8 +959,9 @@ export async function recordLead(
   if (!/^[a-zA-Z0-9-]{8,80}$/.test(visitorId)) {
     return { status: 400, body: { error: 'Visitor id is not valid.' } }
   }
-  if (!/^09\d{9}$/.test(phone)) {
-    return { status: 400, body: { error: 'Enter a mobile number that starts with 09 and has 11 digits.' } }
+  const e164 = mobilePhone(phone)
+  if (!e164) {
+    return { status: 400, body: { error: 'Enter a valid mobile number with its country code.', code: INVALID_PHONE_CODE } }
   }
   if (consent !== true) {
     return { status: 400, body: { error: 'Consent is required.' } }
@@ -985,7 +988,7 @@ export async function recordLead(
     galleryId: gallery.id,
     showId: show.id,
     workId: found.id,
-    phone,
+    phone: e164,
     kind,
     consentAt,
     consentTextVersion: CONSENT_TEXT_VERSION,
@@ -1009,6 +1012,11 @@ function csvCell(value: string): string {
   return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe
 }
 
+function phoneCell(value: string): string {
+  const phone = canonicalPhone(value)
+  return isE164(phone) ? phone : csvCell(phone)
+}
+
 export type LeadCsvRow = {
   at: Date | string
   kind: string
@@ -1024,18 +1032,10 @@ export function leadsCsv(rows: LeadCsvRow[]): string {
     const at = new Date(lead.at)
     lines.push(
       [
-        at.toISOString(),
-        tehranGregorianStamp(at),
-        tehranJalaliStamp(at),
-        lead.kind,
-        lead.phone,
-        lead.workId ?? '',
-        lead.workTitle ?? '',
-        lead.consentTextVersion,
-        'no',
-      ]
-        .map(csvCell)
-        .join(','),
+        ...[at.toISOString(), tehranGregorianStamp(at), tehranJalaliStamp(at), lead.kind].map(csvCell),
+        phoneCell(lead.phone),
+        ...[lead.workId ?? '', lead.workTitle ?? '', lead.consentTextVersion, 'no'].map(csvCell),
+      ].join(','),
     )
   }
   return `\uFEFF${lines.join('\r\n')}\r\n`

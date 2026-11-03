@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useLoaderData, useParams } from 'react-router'
 import OGallerySite from './OGallerySite'
+import { EMPTY_PHONE, PhoneInput, type PhoneValue } from '../../components/PhoneInput'
 import { SkipLink } from '../../components/SkipLink'
 import { artists, artworks, gallery, pastShows, show } from '../../data/gallery'
 import { isDatabaseGallery } from '../../lib/galleries'
 import { seed, type GalleryPageData } from '../../lib/pilot'
-import { normalizePhone } from '../../lib/store'
 import { highFetchPriority } from '../../lib/image-priority'
 
 export default function Website() {
@@ -17,7 +17,7 @@ export default function Website() {
 }
 
 function RoozWebsite() {
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState<PhoneValue>(EMPTY_PHONE)
   const [result, setResult] = useState<'' | 'done' | 'error'>('')
   const available = artworks.filter((a) => a.status !== 'sold')
   const cover = artworks[1]
@@ -30,7 +30,7 @@ function RoozWebsite() {
 
   function follow(e: React.FormEvent) {
     e.preventDefault()
-    setResult(normalizePhone(phone) ? 'done' : 'error')
+    setResult(phone.e164 ? 'done' : 'error')
   }
 
   const showLink = `/g/${gallery.slug}`
@@ -70,12 +70,17 @@ function RoozWebsite() {
           <p><strong>Next opening:</strong> announced soon. Follow the gallery to get the invitation.</p>
           <div className="row gap wrap">
             <label htmlFor="site-phone" className="sr-only">Mobile number</label>
-            <input id="site-phone" type="tel" inputMode="tel" dir="ltr" placeholder="0912 345 6789" value={phone}
-              aria-invalid={result === 'error' || undefined} aria-describedby={result ? 'site-follow-msg' : undefined}
-              onChange={(e) => { setPhone(e.target.value); if (result) setResult('') }} />
+            <PhoneInput
+              id="site-phone"
+              lang="en"
+              labels={{ country: 'Country code', search: 'Search for a country', searchClose: 'Close the country search', noMatch: 'No country matches this search.' }}
+              invalid={result === 'error'}
+              describedBy={result ? 'site-follow-msg' : undefined}
+              onChange={(value) => { setPhone(value); if (value.raw !== phone.raw) setResult('') }}
+            />
             <button className="btn btn-primary" type="submit">Follow</button>
           </div>
-          {result === 'error' && <p id="site-follow-msg" className="small error" role="alert">Enter a mobile number that starts with 09 and has 11 digits.</p>}
+          {result === 'error' && <p id="site-follow-msg" className="small error" role="alert">Enter a valid mobile number.</p>}
           {result === 'done' && <p id="site-follow-msg" className="small" role="status">Demo: no SMS is sent.</p>}
         </form>
 

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { PhoneInput } from '../../components/PhoneInput'
 import { Link } from 'react-router'
 import { EmptyState } from '../../components/EmptyState'
 import { StaffLangSwitch } from '../../components/StaffLangSwitch'
@@ -313,7 +314,13 @@ export default function StyleGuide() {
                 <p className="sheet-body">{t.sheetBody}</p>
                 <div className="sheet-form">
                   <label htmlFor="sg-phone">{t.phone}</label>
-                  <input id="sg-phone" type="tel" inputMode="tel" dir="ltr" autoComplete="off" />
+                  <PhoneInput
+                    id="sg-phone"
+                    lang={lang}
+                    labels={{ country: t.phoneCountry, search: t.phoneSearch, searchClose: t.phoneSearchClose, noMatch: t.phoneNoMatch }}
+                    autoComplete="off"
+                    onChange={() => undefined}
+                  />
                   <button type="button" className="btn btn-primary">{t.sheetAction}</button>
                 </div>
               </div>

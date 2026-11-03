@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { canonicalPhone } from './phone'
 
 export interface SavedWork {
   gallery: string
@@ -117,7 +118,8 @@ export function isDemoVisitor(state: VisitorState, demoSlug: string, demoWorkIds
 function load(): VisitorState {
   if (typeof window === 'undefined') return empty
   try {
-    return parseVisitorState(localStorage.getItem(KEY))
+    const stored = parseVisitorState(localStorage.getItem(KEY))
+    return { ...stored, phone: stored.phone ? canonicalPhone(stored.phone) : null }
   } catch {
     return empty
   }
@@ -179,11 +181,4 @@ export const visitor = {
     set({ lastGallery: visit })
   },
   reset: () => set({ ...empty }),
-}
-
-// Mobile numbers: 09xxxxxxxxx (also accepts Persian digits and +98)
-export function normalizePhone(input: string): string | null {
-  const latin = input.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[\s-]/g, '')
-  const local = latin.startsWith('+98') ? '0' + latin.slice(3) : latin.startsWith('98') ? '0' + latin.slice(2) : latin
-  return /^09\d{9}$/.test(local) ? local : null
 }

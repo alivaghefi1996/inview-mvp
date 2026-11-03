@@ -1,18 +1,15 @@
 import { and, count, desc, eq, gte, lte, sql } from 'drizzle-orm'
 import QRCode from 'qrcode'
 import { auditLogs, leads, qrCodes, shows, visits, works } from '../database/schema'
+import { canonicalPhone } from '../app/lib/phone'
 import { QR_CODE_PATTERN, tehranDay } from '../app/lib/tehran-day'
 import { AccountInputError, type AccountDb } from './accounts'
 import { writeAudit } from './audit'
 import { can, leadPhoneAccess, type Principal } from './authz'
 import { leadsCsv } from './gallery-record'
+import { maskPhone } from './phone'
 import { requireOperator } from './ops'
 import { PermissionError } from './team'
-
-export function maskPhone(phone: string) {
-  if (phone.length < 7) return '•'.repeat(phone.length)
-  return `${phone.slice(0, 4)}${'•'.repeat(phone.length - 6)}${phone.slice(-2)}`
-}
 
 export async function galleryLeads(db: AccountDb, principal: Principal | null, galleryId: string) {
   requireOperator(principal)
@@ -40,7 +37,7 @@ export async function revealLeadPhone(db: AccountDb, principal: Principal | null
       .where(and(eq(leads.galleryId, galleryId), eq(leads.id, leadId))).limit(1)
     if (!lead) throw new AccountInputError('Lead not found.')
     await writeAudit(tx, { actorUserId: actor.userId, galleryId, action: 'lead-reveal', targetType: 'lead', targetId: leadId, summary: { reason: reason.trim() } })
-    return { leadId, phone: lead.phone }
+    return { leadId, phone: canonicalPhone(lead.phone) }
   })
 }
 

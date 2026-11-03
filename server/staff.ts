@@ -1,4 +1,5 @@
 import type { AppDatabase } from '../database/context'
+import { maskPhone } from './phone'
 import { galleries } from '../database/schema'
 import { can, leadPhoneAccess, principalFor, type Action, type Principal } from './authz'
 import { tenantBySlug, readStaffReportForSession, leadsCsvForSession } from './gallery-record'
@@ -48,7 +49,7 @@ export async function staffReport(db: AppDatabase, principal: Principal, gallery
   const result = await readStaffReportForSession(db, galleryId, showId)
   if (result.status !== 200) throw new Response('Not found', { status: 404 })
   const access = leadPhoneAccess(principal, galleryId)
-  return { ...result.body, leads: result.body.leads.map((lead) => ({ ...lead, phone: access === 'full' ? lead.phone : access === 'masked' ? `${lead.phone.slice(0, 4)}•••••${lead.phone.slice(-2)}` : '' })) }
+  return { ...result.body, leads: result.body.leads.map((lead) => ({ ...lead, phone: access === 'full' ? lead.phone : access === 'masked' ? maskPhone(lead.phone) : '' })) }
 }
 
 export async function staffCsv(db: AppDatabase, principal: Principal, galleryId: string, showId?: string | null) {

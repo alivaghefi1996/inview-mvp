@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { PRIVACY_PATH } from '../app/lib/consent'
+import { hydrated } from './hydrated'
 import { seedCatalogue } from './seed-catalogue'
 
 const workId = 'privacywork1'
@@ -33,6 +34,7 @@ test('the privacy page opens in both languages without a sign-in', async ({ page
 test('the sign-in sheet names Inview and links the privacy page', async ({ page, baseURL }) => {
   await useLang(page, 'en', baseURL)
   await page.goto(`/g/o-gallery/works/${workId}`)
+  await hydrated(page)
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   const sheet = page.getByRole('dialog')
   await expect(sheet.getByRole('checkbox', { name: /This gallery and Inview may store/ })).toBeVisible()
@@ -47,6 +49,7 @@ test('a tab with an old consent version says the number did not arrive', async (
     await route.continue({ postData: JSON.stringify({ ...body, consentTextVersion: '2026-11-01' }) })
   })
   await page.goto(`/g/o-gallery/works/${workId}`)
+  await hydrated(page)
   await page.getByRole('button', { name: /Ask about this work/ }).click()
   await page.getByRole('textbox', { name: 'Mobile number', exact: true }).fill('09123336666')
   await page.getByRole('checkbox').check()
@@ -57,6 +60,8 @@ test('a tab with an old consent version says the number did not arrive', async (
   await expect(page.getByRole('button', { name: /Ask about this work/ })).toBeVisible()
   await page.unroute('**/api/v1/pilot')
   await page.getByRole('button', { name: 'Reload' }).click()
+  await page.waitForLoadState('load')
+  await hydrated(page)
   await page.getByRole('button', { name: /Ask about this work/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
 })

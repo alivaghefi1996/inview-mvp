@@ -6,7 +6,7 @@ import { normalizePhone } from './accounts'
 import { logEvent } from './http-log.js'
 import type { Principal } from './authz'
 import { requireOperator } from './ops'
-import { maskPhone } from './ops-data'
+import { maskPhone } from './phone'
 import { consumeBucket, hashClientAddress, rateLimitConfig, tooMany, type ApiResult } from './rate-limit'
 
 const FIELD_LIMIT = 200

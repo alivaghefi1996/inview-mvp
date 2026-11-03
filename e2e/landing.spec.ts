@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import postgres from 'postgres'
+import { hydrated } from './hydrated'
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000'
 const viewports = [
@@ -64,6 +65,7 @@ for (const lang of ['fa', 'en'] as const) {
       await page.setViewportSize({ width: 390, height: 844 })
       await page.context().addCookies([{ name: 'inview-lang', value: lang, url: baseURL }])
       await page.goto('/#contact', { waitUntil: 'load' })
+      await hydrated(page)
       await page.locator('[name="galleryName"]').fill(galleryName)
       await page.locator('[name="contactPerson"]').fill('Contact person')
       await page.locator('[name="contact"]').fill('not a contact')
@@ -83,7 +85,7 @@ for (const lang of ['fa', 'en'] as const) {
       expect(width.document).toBeLessThanOrEqual(width.viewport)
       const rows = await database`select contact, lang, paperclip_issue_id from inquiries where gallery_name = ${galleryName}`
       expect(rows).toHaveLength(1)
-      expect(rows[0]).toMatchObject({ contact: '09121234567', lang, paperclip_issue_id: null })
+      expect(rows[0]).toMatchObject({ contact: '+989121234567', lang, paperclip_issue_id: null })
     } finally {
       await database`delete from rate_limits where bucket like 'inquiry:%'`
       await database.end()
