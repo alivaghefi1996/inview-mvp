@@ -104,7 +104,7 @@ test('the Paperclip request has the documented shape with a User-Agent header', 
     assert.equal(call.body.assigneeUserId, 'user-ali')
     assert.match(call.body.title, /Gallery One/)
     assert.match(call.body.description, /We open a show in spring\./)
-    assert.match(call.body.description, /+989121234567/)
+    assert.match(call.body.description, /\+989121234567/)
   })
 })
 
