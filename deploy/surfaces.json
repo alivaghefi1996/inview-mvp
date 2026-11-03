@@ -18,6 +18,11 @@
       "labelFa": "اپ بازدیدکننده، گالری نمونه"
     },
     {
+      "id": "visitor-sample-100",
+      "label": "Visitor app, 100-work demo gallery",
+      "labelFa": "اپ بازدیدکننده، گالری نمونه با صد اثر"
+    },
+    {
       "id": "staff",
       "label": "Gallery staff dashboard",
       "labelFa": "داشبورد کارکنان گالری"
@@ -124,6 +129,44 @@
       "path": "/g/sample/about",
       "access": "public",
       "screenshot": true
+    },
+    {
+      "id": "sample-100",
+      "group": "visitor-sample-100",
+      "label": "sample-100: Welcome",
+      "labelFa": "گالری صد اثر: خوشامد",
+      "path": "/g/sample-100",
+      "access": "public",
+      "screenshot": false,
+      "note": "A demo gallery with 100 works. It shows how a full wall performs."
+    },
+    {
+      "id": "sample-100-works",
+      "group": "visitor-sample-100",
+      "label": "sample-100: Works",
+      "labelFa": "گالری صد اثر: آثار",
+      "path": "/g/sample-100/works",
+      "access": "public",
+      "screenshot": false,
+      "note": "The page that the 100-work performance measurement uses."
+    },
+    {
+      "id": "sample-100-prices",
+      "group": "visitor-sample-100",
+      "label": "sample-100: Prices",
+      "labelFa": "گالری صد اثر: قیمت‌ها",
+      "path": "/g/sample-100/prices",
+      "access": "public",
+      "screenshot": false
+    },
+    {
+      "id": "sample-100-about",
+      "group": "visitor-sample-100",
+      "label": "sample-100: About",
+      "labelFa": "گالری صد اثر: درباره",
+      "path": "/g/sample-100/about",
+      "access": "public",
+      "screenshot": false
     },
     {
       "id": "o-gallery-site",

@@ -8,7 +8,6 @@ import { isDatabaseGallery } from '../../lib/galleries'
 import { seed, type GalleryPageData } from '../../lib/pilot'
 import { highFetchPriority } from '../../lib/image-priority'
 
-// Served at roozgallery.inview.ir, or at /site/rooz-gallery before the domain exists.
 export default function Website() {
   const { slug } = useParams()
   // `/` has no slug, so it carries no pilot record and shows the demo website.
@@ -140,7 +139,7 @@ function RoozWebsite() {
           <p className="site-brand light">{gallery.name.toUpperCase()}</p>
           <p>{gallery.address}<br />{gallery.hours}<br />Instagram <a href={`https://instagram.com/${gallery.instagram}`}>@{gallery.instagram}</a></p>
         </div>
-        <p className="site-made">{gallery.subdomain}.inview.ir · Website by Inview</p>
+        <p className="site-made">Website by Inview</p>
       </footer>
     </div>
   )

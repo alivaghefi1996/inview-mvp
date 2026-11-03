@@ -37,7 +37,7 @@
 
   --sans: 'Sora', 'Helvetica Neue', Arial, sans-serif;
   --serif: 'Fraunces', 'Times New Roman', serif;
-  --fa: 'Estedad', Tahoma, sans-serif;
+  --fa: 'Estedad Variable', Tahoma, sans-serif;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -698,6 +698,13 @@ p { text-wrap: pretty; }
   flex-wrap: wrap;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
+}
+/* Estedad sets Persian about 1.2x wider than the fallback face, so these chips fit on one row
+   until the font loads and on two rows after it. That pushed the whole work wall down 52 px and
+   scored a 0.21 layout shift. Estedad needs two rows up to 436 px, so hold both rows here. */
+@media (max-width: 440px) {
+  /* The reserved height must not stretch a single row of chips to fill it. */
+  .chips { min-height: calc(2 * var(--touch) + var(--space-2) + 2 * var(--space-4)); align-content: flex-start; }
 }
 .chips button {
   flex: none;

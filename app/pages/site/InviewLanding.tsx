@@ -47,7 +47,7 @@ export const landingCopy = {
     email: 'پیام ایمیلی',
     comingSoon: 'جزئیات تماس به‌زودی اعلام می‌شود',
     staff: 'ورود کارکنان گالری',
-    footer: 'صفحه نمایشگاه و فهرست قیمت برای گالری‌های ایران.',
+    footer: 'صفحه نمایشگاه و فهرست قیمت برای گالری‌ها.',
   },
   en: {
     title: 'Inview | Your gallery, in your visitor’s hands',
@@ -89,7 +89,7 @@ export const landingCopy = {
     email: 'Email us',
     comingSoon: 'Contact details coming soon',
     staff: 'Gallery staff sign-in',
-    footer: 'Show pages and price lists for galleries in Iran.',
+    footer: 'Show pages and price lists for galleries.',
   },
 }
 
