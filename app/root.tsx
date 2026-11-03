@@ -16,6 +16,7 @@ import { metaCopy } from './lib/meta'
 import { dirFor, resolveLang } from './lib/lang'
 import { APP_MANIFEST_PATH, galleryManifestPath } from './lib/manifest'
 import { ServiceWorker } from './components/ServiceWorker'
+import { DeferredHydration } from './components/DeferredHydration'
 import fraunces400 from '@fontsource/fraunces/files/fraunces-latin-400-normal.woff2?url'
 import fraunces500 from '@fontsource/fraunces/files/fraunces-latin-500-normal.woff2?url'
 // A stylesheet link adds a round trip before the first paint, and on a mobile connection it
@@ -73,6 +74,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ServiceWorker />
         <ScrollRestoration />
         <Scripts />
+        <DeferredHydration />
       </body>
     </html>
   )
