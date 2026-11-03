@@ -13,10 +13,15 @@ const pages = readdirSync(`${dir}/pages`)
 const impeccable = existsSync(`${dir}/impeccable.json`)
   ? JSON.parse(readFileSync(`${dir}/impeccable.json`, 'utf8'))
   : {}
-const diffs = existsSync(`${dir}/diffs`)
-  ? readdirSync(`${dir}/diffs`, { recursive: true }).map(String).filter((f) => f.endsWith('-diff.png'))
+// Playwright 1.64.1 writes a -diff.png for a size mismatch as well as for a
+// pixel mismatch. Match -actual.png too, so that a version that drops the diff
+// image still reports the page as changed instead of as same.
+const rejected = existsSync(`${dir}/diffs`)
+  ? readdirSync(`${dir}/diffs`, { recursive: true })
+      .map(String)
+      .filter((f) => f.endsWith('-diff.png') || f.endsWith('-actual.png'))
   : []
-const visualFailed = new Set(diffs.map((f) => f.split('/').pop().replace(/-diff\.png$/, '')))
+const visualFailed = new Set(rejected.map((f) => f.split('/').pop().replace(/-(diff|actual)\.png$/, '')))
 
 // Rules accepted in HAD-91 as the paper-and-ink look. They are listed, not failed.
 // Advisory findings from impeccable (straggler, unbalanced-heading) are also listed, not failed.
@@ -47,6 +52,8 @@ for (const p of pages) {
   }
   if (!p.httpOk) issues.push(`${p.id}: HTTP ${p.httpStatus}`)
   if (changed) issues.push(`${p.id}: screenshot differs from the approved image`)
+  if (p.imagesSettled === false) issues.push(`${p.id}: images were still loading at the screenshot`)
+  for (const src of p.blankImages ?? []) issues.push(`${p.id}: image did not load: ${src}`)
   for (const v of p.axe) issues.push(`${p.id}: axe ${v.impact} ${v.id} (${v.nodes} nodes)`)
   const errorCounts = new Map()
   for (const e of p.pageErrors) {
@@ -59,7 +66,25 @@ for (const p of pages) {
   )
 }
 
+// A page whose test stopped early writes no JSON. Without this, the verdict
+// reads as PASS because no result is not a failed result.
+const reported = new Set(pages.map((p) => p.id))
+const approved = existsSync('visual-qa/baselines')
+  ? readdirSync('visual-qa/baselines').filter((f) => f.endsWith('.png'))
+  : []
+for (const file of approved) {
+  const id = file.replace(/\.png$/, '')
+  if (!reported.has(id)) issues.push(`${id}: the page has an approved image but gave no result`)
+}
+
 const missing = pages.filter((p) => p.visual === 'no-baseline').length
+// A new route starts with no approved image, and an unapproved page compares
+// nothing. Once the set exists, say so, so that the gap cannot read as PASS.
+if (approved.length && missing) {
+  for (const p of pages) {
+    if (p.visual === 'no-baseline') issues.push(`${p.id}: the page has no approved image`)
+  }
+}
 const verdict = issues.length === 0 ? 'PASS' : 'FAIL'
 const lines = [
   `## Visual QA: ${verdict}`,

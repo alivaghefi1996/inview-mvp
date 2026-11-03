@@ -1,14 +1,53 @@
 import AxeBuilder from '@axe-core/playwright'
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { langs, routes, viewports } from './pages'
 
 const reportDir = 'visual-qa-report'
 const baseURL = process.env.QA_BASE_URL || 'https://inview.moshes.io'
 const updating = process.env.QA_UPDATE === '1'
+const settlePasses = 6
+const imageTimeout = 20_000
 
 mkdirSync(`${reportDir}/pages`, { recursive: true })
 mkdirSync(`${reportDir}/screenshots`, { recursive: true })
+
+async function scrollThroughPage(page: Page) {
+  await page.evaluate(async () => {
+    const step = Math.round(window.innerHeight * 0.8)
+    const frame = () => new Promise((done) => requestAnimationFrame(() => done(null)))
+    for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+      window.scrollTo(0, y)
+      await frame()
+    }
+    window.scrollTo(0, document.documentElement.scrollHeight)
+    await frame()
+    window.scrollTo(0, 0)
+    await frame()
+  })
+  await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete), null, {
+    timeout: imageTimeout,
+  })
+  return page.evaluate(() => document.images.length)
+}
+
+// A work image stays behind an IntersectionObserver until a scroll brings it
+// near the viewport, and each <img> that appears can hold a later image back.
+// A shot taken before the count stops growing has blank artworks.
+async function loadDeferredImages(page: Page) {
+  let count = -1
+  for (let pass = 0; pass < settlePasses; pass++) {
+    let seen: number
+    try {
+      seen = await scrollThroughPage(page)
+    } catch {
+      return { imageCount: count, settled: false }
+    }
+    if (seen === count) return { imageCount: seen, settled: true }
+    count = seen
+  }
+  return { imageCount: count, settled: false }
+}
 
 for (const vp of viewports) {
   for (const lang of langs) {
@@ -23,6 +62,13 @@ for (const vp of viewports) {
         await page.evaluate(() => document.fonts.ready)
         await page.waitForTimeout(600)
 
+        const { imageCount, settled } = await loadDeferredImages(page)
+        const blankImages = await page.evaluate(() =>
+          Array.from(document.images)
+            .filter((img) => img.naturalWidth === 0)
+            .map((img) => img.currentSrc || img.src),
+        )
+
         const status = response?.status() ?? 0
         const expected = route.name === 'not-found' ? 404 : 200
         const entry: Record<string, unknown> = {
@@ -34,9 +80,16 @@ for (const vp of viewports) {
           expectedStatus: expected,
           httpOk: status === expected,
           pageErrors: errors,
+          imageCount,
+          imagesSettled: settled,
+          blankImages,
         }
 
-        await page.screenshot({ path: `${reportDir}/screenshots/${id}.png`, fullPage: true })
+        await page.screenshot({
+          path: `${reportDir}/screenshots/${id}.png`,
+          fullPage: true,
+          animations: 'disabled',
+        })
 
         const axe = await new AxeBuilder({ page }).analyze()
         entry.axe = axe.violations
