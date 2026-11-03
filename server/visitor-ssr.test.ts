@@ -178,3 +178,14 @@ test('the sign-in sheet starts with an empty consent box in Persian and English'
   assert.match(en, /Save sends your mobile number/)
   assert.match(en, /I agree/)
 })
+
+test('every Rooz visitor page shows the Demo label in both languages', async () => {
+  for (const path of ['/g/rooz-gallery', '/g/rooz-gallery/works', '/g/rooz-gallery/works/fateh-face']) {
+    assert.match(await renderRoute(path, null, 'en'), /class="demo-badge"[^>]*>Demo</)
+    assert.match(await renderRoute(path, null, 'fa'), /class="demo-badge"[^>]*>نمونه نمایشی</)
+  }
+})
+
+test('a real gallery that is not a demo shows no Demo label', async () => {
+  assert.doesNotMatch(await renderRoute('/g/o-gallery', record(), 'en'), /demo-badge/)
+})

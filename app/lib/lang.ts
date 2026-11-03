@@ -12,11 +12,7 @@ function underPath(pathname: string, base: string): boolean {
   return pathname === base || pathname.startsWith(`${base}/`)
 }
 
-export function isStaffPath(pathname: string): boolean {
-  return underPath(pathname, '/dashboard') || underPath(pathname, '/staff')
-}
-
-/** ADR 0002: a gallery opens in Persian, and the Rooz demo opens in English for sales. */
+/** ADR 0002: a gallery opens in Persian, and the Rooz demo, its dashboard included, opens in English for sales. */
 export function defaultLang(pathname: string): Lang {
   if (pathname === '/' || pathname === PRIVACY_PATH || isBilingualStaffPath(pathname)) return 'fa'
   const slug = gallerySurfaceSlug(pathname)
@@ -38,9 +34,7 @@ export function isBilingualStaffPath(pathname: string): boolean {
   return BILINGUAL_STAFF.some((base) => underPath(pathname, base))
 }
 
-/** The Rooz demo dashboard has English labels only, so the cookie does not apply there. */
 export function resolveLang(pathname: string, cookieHeader: string | null | undefined): Lang {
-  if (isStaffPath(pathname) && !isBilingualStaffPath(pathname)) return 'en'
   return readLangCookie(cookieHeader) ?? defaultLang(pathname)
 }
 
