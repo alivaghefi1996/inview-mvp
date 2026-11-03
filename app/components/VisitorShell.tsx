@@ -5,7 +5,7 @@ import { useT } from '../lib/i18n'
 import { CONSENT_TEXT_VERSION } from '../lib/consent'
 import { isDatabaseGallery } from '../lib/galleries'
 import { gallerySlugFromPath, oCopy, pick, recordLandingScan, seed, type GalleryPageData } from '../lib/pilot'
-import { useVisitor } from '../lib/store'
+import { useVisitor, visitor } from '../lib/store'
 import { LangSwitch } from './LangSwitch'
 import { SignInSheet, type SheetKind } from './SignInSheet'
 import { SkipLink } from './SkipLink'
@@ -19,7 +19,7 @@ export const useSignIn = () => useContext(SignInCtx)
 
 export function VisitorShell() {
   const { t, lang, dir, galleryName } = useT()
-  const { phone, consentVersion } = useVisitor()
+  const { phone, consentVersion, lastGallery } = useVisitor()
   const [pending, setPending] = useState<{ kind: SheetKind; action: () => void; subtitle?: string; workId?: string } | null>(null)
   const { pathname } = useLocation()
   const busy = useNavigation().state !== 'idle'
@@ -38,10 +38,13 @@ export function VisitorShell() {
     else setPending({ kind, action, subtitle, workId })
   }, [phone, consentVersion])
 
-  const slug = gallerySlugFromPath(pathname) ?? ''
+  const pathSlug = gallerySlugFromPath(pathname)
+  const slug = pathSlug ?? lastGallery?.slug ?? ''
   const isDb = isDatabaseGallery(slug)
   const layoutData = useRouteLoaderData('routes/g') as GalleryPageData | undefined
-  const record = layoutData?.pilot ?? seed
+  const pilot = layoutData?.pilot ?? null
+  const remembered = !pathSlug && lastGallery ? { name: lastGallery.name, nameFa: lastGallery.nameFa, logo: lastGallery.logo } : null
+  const record = pilot ?? { ...seed, ...remembered }
   const oName = pick(lang, record.name, record.nameFa)
   const base = isDb ? `/g/${slug}` : `/g/${gallery.slug}`
   const brand = isDb ? oName : galleryName
@@ -56,9 +59,20 @@ export function VisitorShell() {
     { to: '/me', label: t.profile, icon: <User />, end: true },
   ]
 
+  const pilotName = pilot?.name ?? ''
+  const pilotNameFa = pilot?.nameFa ?? ''
+  const pilotLogo = pilot?.logo ?? null
   useEffect(() => {
-    if (isDb && pathname === `/g/${slug}`) recordLandingScan(slug, new URLSearchParams(window.location.search).get('q'))
-  }, [isDb, pathname, slug])
+    if (!pathSlug || (isDatabaseGallery(pathSlug) && !pilot)) return
+    visitor.enterGallery({ slug: pathSlug, name: pilotName, nameFa: pilotNameFa, logo: pilotLogo })
+  }, [pathSlug, pilot, pilotName, pilotNameFa, pilotLogo])
+
+  useEffect(() => {
+    if (!isDb || pathname !== `/g/${slug}`) return
+    recordLandingScan(slug, new URLSearchParams(window.location.search).get('q'), (showId) => {
+      visitor.stampVisit({ gallery: slug, showId, name: pilotName, nameFa: pilotNameFa })
+    })
+  }, [isDb, pathname, slug, pilotName, pilotNameFa])
 
   return (
     <SignInCtx.Provider value={{ requireSignIn }}>

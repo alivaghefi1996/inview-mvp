@@ -890,7 +890,7 @@ export async function recordVisit(
   workId?: string | null,
   qrCode?: string | null,
   now: Date = new Date(),
-): Promise<{ status: number; body: { ok: true; counted: boolean; duplicate: boolean } | { error: string } }> {
+): Promise<{ status: number; body: { ok: true; counted: boolean; duplicate: boolean; qrShowId?: string | null } | { error: string } }> {
   if (!/^[a-zA-Z0-9-]{8,80}$/.test(visitorId)) {
     return { status: 400, body: { error: 'Visitor id is not valid.' } }
   }
@@ -918,9 +918,9 @@ export async function recordVisit(
         qrCodeId,
         createdAt: now,
       })
-      return { status: 200, body: { ok: true, counted: true, duplicate: false } }
+      return { status: 200, body: { ok: true, counted: true, duplicate: false, qrShowId: qrCodeId ? show.id : null } }
     } catch {
-      return { status: 200, body: { ok: true, counted: false, duplicate: true } }
+      return { status: 200, body: { ok: true, counted: false, duplicate: true, qrShowId: qrCodeId ? show.id : null } }
     }
   }
 
