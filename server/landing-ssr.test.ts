@@ -47,18 +47,21 @@ test('the language cookie server-renders the root landing in English', () => {
 
 test('default landing contact shows no unverified contact link', () => {
   const { html } = renderHome('https://inview.test/')
-  assert.doesNotMatch(html, /tel:|wa\.me|t\.me|mailto:|000/)
-  assert.ok(html.includes(landingCopy.fa.comingSoon))
-  assert.doesNotMatch(html, /href="#contact"/)
+  assert.doesNotMatch(html.replace('maxLength="4000"', ''), /tel:|wa\.me|t\.me|mailto:|000/)
+  assert.match(html, /href="#contact"/)
 })
 
-test('empty contact channels show the localized coming-soon line', () => {
+test('the inquiry form and one consent line render in each language with no contact channels', () => {
   const contact = { phone: '', whatsappUrl: '', telegramUrl: '', email: '' }
   for (const lang of ['fa', 'en'] as const) {
     const { html } = renderHome('https://inview.test/', `inview-lang=${lang}`, contact)
-    assert.ok(html.includes(landingCopy[lang].comingSoon))
+    const words = landingCopy[lang]
     assert.doesNotMatch(html, /tel:|wa\.me|t\.me|mailto:/)
-    assert.ok(!html.includes(landingCopy[lang].contact))
+    assert.doesNotMatch(html, /landing-contact-links/)
+    assert.equal(html.split(words.formConsent).length - 1, 1)
+    for (const name of ['galleryName', 'contactPerson', 'contact', 'message', 'consent']) assert.ok(html.includes(`name="${name}"`))
+    assert.ok(html.includes(words.formSend))
+    assert.ok(html.includes(words.contact))
   }
 })
 
@@ -72,7 +75,6 @@ test('each configured contact channel can be the primary action', () => {
   ]) {
     const { html } = renderHome('https://inview.test/', undefined, { ...empty, [key]: value })
     assert.ok(html.includes(`class="btn btn-primary${key === 'phone' ? ' landing-phone-link' : ''}" href="${href}"`))
-    assert.ok(!html.includes(landingCopy.fa.comingSoon))
     assert.ok(html.includes(`<a class="btn btn-outline" href="#contact">${landingCopy.fa.contact}</a>`))
     if (key === 'phone') assert.match(html, /<bdi dir="ltr">\+۳۵۸ ۴۰ ۱۲۳۴۵۶۷<\/bdi>/)
   }

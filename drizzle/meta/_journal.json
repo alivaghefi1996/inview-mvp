@@ -64,6 +64,13 @@
       "when": 1762080000000,
       "tag": "0008_publish_live_shows",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1762090000000,
+      "tag": "0009_inquiries",
+      "breakpoints": true
     }
   ]
 }

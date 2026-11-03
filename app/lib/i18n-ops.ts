@@ -4,6 +4,8 @@ import { staffFormat } from './i18n-staff'
 
 const en = {
   qr: 'QR codes', label: 'Label', qrSlug: 'Code slug', createQr: 'Create QR code', downloadSvg: 'Download SVG',
+  inquiries: 'Gallery inquiries', inquiriesLimit: 'Latest 200 inquiries from the landing page.', contactPerson: 'Contact person',
+  taskState: 'Paperclip task', taskCreated: 'Created', taskPending: 'Pending', taskAttempts: 'Attempts',
   activity: 'Activity', audit: 'Audit log', operators: 'Operators', inviteOperator: 'Invite operator',
   phone: 'Phone number', reason: 'Reason for revealing this number (no personal details)', reveal: 'Reveal one phone',
   exportCsv: 'Export leads as CSV', consent: 'Consent version', noWork: 'No work', askKind: 'Enquiry', saveKind: 'Saved work',
@@ -43,6 +45,8 @@ const en = {
 
 const fa: typeof en = {
   qr: 'کدهای QR', label: 'برچسب', qrSlug: 'شناسه کد', createQr: 'ساخت کد QR', downloadSvg: 'دریافت SVG',
+  inquiries: 'پیام گالری‌ها', inquiriesLimit: '۲۰۰ پیام اخیر از صفحه اصلی.', contactPerson: 'نام رابط',
+  taskState: 'وظیفه پیپرکلیپ', taskCreated: 'ساخته شد', taskPending: 'در انتظار', taskAttempts: 'تلاش‌ها',
   activity: 'فعالیت', audit: 'گزارش عملیات', operators: 'اپراتورها', inviteOperator: 'دعوت اپراتور',
   phone: 'شماره تلفن', reason: 'دلیل نمایش شماره (بدون اطلاعات شخصی)', reveal: 'نمایش یک شماره',
   exportCsv: 'دریافت درخواست‌ها به صورت CSV', consent: 'نسخه رضایت', noWork: 'بدون اثر', askKind: 'پرسش', saveKind: 'اثر ذخیره‌شده',

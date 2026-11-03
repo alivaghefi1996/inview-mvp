@@ -301,3 +301,27 @@ export const rateLimits = pgTable('rate_limits', {
   windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
   hits: integer('hits').notNull(),
 })
+
+export const inquiries = pgTable(
+  'inquiries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    galleryName: varchar('gallery_name', { length: 200 }).notNull(),
+    contactPerson: varchar('contact_person', { length: 200 }).notNull(),
+    contact: varchar('contact', { length: 320 }).notNull(),
+    message: text('message').notNull(),
+    lang: varchar('lang', { length: 8 }).notNull(),
+    consentAt: timestamp('consent_at', { withTimezone: true }).notNull(),
+    consentTextVersion: varchar('consent_text_version', { length: 40 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    paperclipIssueId: varchar('paperclip_issue_id', { length: 80 }),
+    paperclipIssueIdentifier: varchar('paperclip_issue_identifier', { length: 80 }),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('inquiries_pending_idx').on(table.nextAttemptAt).where(sql`${table.paperclipIssueId} IS NULL`),
+    index('inquiries_created_idx').on(table.createdAt),
+  ],
+)

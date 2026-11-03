@@ -39,6 +39,8 @@ const LIMIT_DEFAULTS = {
   leadIpWindowSec: 3600,
   uploadGalleryMax: 80,
   uploadGalleryWindowSec: 3600,
+  inquiryIpMax: 5,
+  inquiryIpWindowSec: 3600,
 } as const
 
 export type RateLimitConfig = {
@@ -123,6 +125,8 @@ export function rateLimitConfig(env: NodeJS.ProcessEnv = process.env): RateLimit
       env.RATE_LIMIT_UPLOAD_GALLERY_WINDOW_SEC,
       LIMIT_DEFAULTS.uploadGalleryWindowSec,
     ),
+    inquiryIpMax: positiveInt(env.RATE_LIMIT_INQUIRY_IP_MAX, LIMIT_DEFAULTS.inquiryIpMax),
+    inquiryIpWindowSec: positiveInt(env.RATE_LIMIT_INQUIRY_IP_WINDOW_SEC, LIMIT_DEFAULTS.inquiryIpWindowSec),
     ipSalt: ipSalt(env),
   }
 }

@@ -142,6 +142,8 @@ merges a sync pull request when a fast-forward is not possible.
 | `S3_PUBLIC_BASE` | Public origin plus the bucket path. Production: `https://inview-media.moshes.io/inview` |
 | `S3_OBJECT_PREFIX` | Object key prefix the media route can serve. Production: `u` |
 | `PUBLIC_RECORD_TTL_MS` | How long one process serves the public catalogue from memory. Default 5000. See [Public catalogue cache](#public-catalogue-cache). |
+| `PAPERCLIP_API_URL`, `PAPERCLIP_COMPANY_ID`, `PAPERCLIP_PROJECT_ID`, `PAPERCLIP_INQUIRY_ASSIGNEE_USER_ID` | Target of the Paperclip task for a landing page inquiry. Not secret. |
+| `PAPERCLIP_API_TOKEN` | Server-only Paperclip key. While any Paperclip variable is unset, inquiries stay pending in Postgres and the server makes no Paperclip request. |
 
 ## Public catalogue cache
 
@@ -212,6 +214,8 @@ The defaults are in `rateLimitConfig` in `server/rate-limit.ts`.
 | `RATE_LIMIT_LEAD_IP_WINDOW_SEC` | 3600 | Window for lead submits from one client address. |
 | `RATE_LIMIT_UPLOAD_GALLERY_MAX` | 80 | Upload starts for one gallery. |
 | `RATE_LIMIT_UPLOAD_GALLERY_WINDOW_SEC` | 3600 | Window for upload starts on one gallery. |
+| `RATE_LIMIT_INQUIRY_IP_MAX` | 5 | Valid landing page inquiries from one client address. |
+| `RATE_LIMIT_INQUIRY_IP_WINDOW_SEC` | 3600 | Window for inquiries from one client address. |
 
 The visit limit per address is high because many phones can share one network at a show.
 Failed checks and accepted checks are separate, so wrong codes do not consume the upload budget.
