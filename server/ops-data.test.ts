@@ -20,17 +20,17 @@ test('lead downloads require admin, isolate galleries, match the staff CSV and w
     const support = await createUser(db, { email: 'export-support@example.com', platformRole: 'support' })
     const adminSession = await createUserSession(db, user.id, false)
     const supportSession = await createUserSession(db, support.id, false)
-    const { gallery } = await ensureOGalleryTenant(db)
+    const { gallery, show } = await ensureOGalleryTenant(db)
     const [other] = await db.insert(galleries).values({ slug: 'other-export', nameEn: 'Other', nameFa: 'دیگر' }).returning()
     const titles = ['=HYPERLINK("x")', 'Harbour, light', '+SUM(A1)', '-1+2', '@SUM(A1)', '\tformula', '\rformula', 'Line one\n"line two"']
     const consentAt = new Date('2026-10-30T10:00:00Z')
     for (const [index, title] of titles.entries()) {
       const workId = `csvwork0${index}`
       await db.insert(works).values({ id: workId, galleryId: gallery.id, title })
-      await db.insert(leads).values({ galleryId: gallery.id, workId, phone: `0912000000${index}`, kind: index === 1 ? 'save' : 'ask',
+      await db.insert(leads).values({ galleryId: gallery.id, showId: show.id, workId, phone: `0912000000${index}`, kind: index === 1 ? 'save' : 'ask',
         consentAt, consentTextVersion: 'v1', createdAt: new Date(consentAt.getTime() + index * 1000) })
     }
-    await db.insert(leads).values({ galleryId: gallery.id, phone: '09120000009', kind: 'ask', consentAt, consentTextVersion: 'v1', createdAt: new Date('2026-10-31T00:00:00Z') })
+    await db.insert(leads).values({ galleryId: gallery.id, showId: show.id, phone: '09120000009', kind: 'ask', consentAt, consentTextVersion: 'v1', createdAt: new Date('2026-10-31T00:00:00Z') })
     await db.insert(works).values({ id: 'other-work', galleryId: other.id, title: 'Other gallery private title' })
     await db.insert(leads).values({ galleryId: other.id, workId: 'other-work', phone: '09129999999', kind: 'ask', consentAt, consentTextVersion: 'v1' })
     const args = (cookie: string, slug = gallery.slug) => ({ request: new Request(`https://example.com/ops/galleries/${slug}/leads.csv`, { headers: { cookie } }), params: { slug } })

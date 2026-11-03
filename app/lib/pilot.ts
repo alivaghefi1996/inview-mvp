@@ -58,6 +58,13 @@ export interface GalleryPageData {
 
 export const seed = seedJson as PilotRecord
 
+// imageSet is derived from the stored upload on every read, so sending it back only
+// spends the JSON body limit: about 0.9 KB per work, or 90 KB at a full show.
+export function publishBody(gallery: string, show: string | undefined, record: PilotRecord): string {
+  const works = record.works.map(({ imageSet, ...work }) => work)
+  return JSON.stringify({ gallery, show, record: { ...record, works } })
+}
+
 const visitorKey = 'inview-visitor-id'
 const memoryVisitorId = crypto.randomUUID()
 

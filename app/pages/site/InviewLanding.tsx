@@ -47,7 +47,7 @@ export const landingCopy = {
     email: 'پیام ایمیلی',
     comingSoon: 'جزئیات تماس به‌زودی اعلام می‌شود',
     staff: 'ورود کارکنان گالری',
-    footer: 'صفحه نمایشگاه و فهرست قیمت برای گالری‌های ایران.',
+    footer: 'صفحه نمایشگاه و فهرست قیمت برای گالری‌ها.',
   },
   en: {
     title: 'Inview | Your gallery, in your visitor’s hands',
@@ -89,7 +89,7 @@ export const landingCopy = {
     email: 'Email us',
     comingSoon: 'Contact details coming soon',
     staff: 'Gallery staff sign-in',
-    footer: 'Show pages and price lists for galleries in Iran.',
+    footer: 'Show pages and price lists for galleries.',
   },
 }
 
@@ -112,11 +112,18 @@ function LandingLangSwitch() {
   )
 }
 
-function PilotScreen({ screen, alt }: { screen: (typeof screens)[number]; alt: string }) {
+function PilotScreen({ screen, alt, eager = false }: { screen: (typeof screens)[number]; alt: string; eager?: boolean }) {
   return (
     <picture>
       <source srcSet={`/landing/${screen}.webp`} type="image/webp" />
-      <img src={`/landing/${screen}.png`} alt={alt} width={540} height={1169} loading="eager" />
+      <img
+        src={`/landing/${screen}.png`}
+        alt={alt}
+        width={540}
+        height={1169}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchPriority={eager ? 'high' : 'low'}
+      />
     </picture>
   )
 }
@@ -154,7 +161,7 @@ export default function InviewLanding({ contact = landingContact }: { contact?: 
           <figure className="landing-exhibit">
             <span className="landing-exhibit-label">{words.preview}</span>
             <div className="landing-phone">
-              <PilotScreen screen="work" alt={words.screens[2]} />
+              <PilotScreen screen="work" alt={words.screens[2]} eager />
             </div>
             <figcaption>{words.previewCaption}</figcaption>
           </figure>

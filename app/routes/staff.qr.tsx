@@ -1,9 +1,7 @@
-import { and, count, desc, eq } from 'drizzle-orm'
 import { Form, data, useActionData, useLoaderData } from 'react-router'
 import { database } from '../../database/context'
-import { qrCodes, shows, visits } from '../../database/schema'
 import { AccountInputError } from '../../server/accounts'
-import { createStaffQr } from '../../server/qr'
+import { createStaffQr, staffQrCodes } from '../../server/qr'
 import { staffHeaders, staffTenant } from '../../server/staff'
 import { can } from '../../server/authz'
 import { useStaffT } from '../lib/i18n-staff'
@@ -14,10 +12,7 @@ export const headers = staffHeaders
 export async function loader({ request, params }: { request: Request; params: { slug?: string } }) {
   const db = database()
   const { principal, tenant } = await staffTenant(db, request, params.slug ?? '', 'create-qr')
-  const codes = await db.select({ id: qrCodes.id, code: qrCodes.code, label: qrCodes.label, scans: count(visits.id) })
-    .from(qrCodes).innerJoin(shows, eq(shows.id, qrCodes.showId))
-    .leftJoin(visits, and(eq(visits.qrCodeId, qrCodes.id), eq(visits.showId, shows.id), eq(visits.kind, 'scan')))
-    .where(eq(shows.galleryId, tenant.gallery.id)).groupBy(qrCodes.id).orderBy(desc(qrCodes.createdAt))
+  const codes = await staffQrCodes(db, tenant)
   return { gallery: { slug: tenant.gallery.slug, nameEn: tenant.gallery.nameEn, nameFa: tenant.gallery.nameFa }, codes, permissions: (['edit-catalogue', 'manage-staff', 'create-qr'] as const).filter((action) => can(principal, action, tenant.gallery.id)) }
 }
 export async function action({ request, params }: { request: Request; params: { slug?: string } }) {

@@ -1,0 +1,44 @@
+name: Visual QA baselines
+
+on:
+  push:
+    branches: ['*-visual-baselines']
+
+permissions:
+  contents: read
+
+env:
+  QA_BASE_URL: https://inview.moshes.io
+
+jobs:
+  baselines:
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci --include=dev
+      - name: Compare the approved images against the live site
+        run: npx playwright test -c playwright.visual-qa.config.ts
+        continue-on-error: true
+      - name: Summary
+        env:
+          QA_COMMIT: ${{ github.sha }}
+          QA_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/visual-qa-summary.mjs
+      - name: Render candidate images
+        env:
+          QA_UPDATE: '1'
+        run: npx playwright test -c playwright.visual-qa.config.ts --update-snapshots=all
+      - name: Collect candidate images
+        run: |
+          mkdir -p visual-qa-report/candidates
+          cp visual-qa/baselines/*.png visual-qa-report/candidates/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-qa-baselines-${{ github.sha }}
+          path: visual-qa-report
+          retention-days: 30
+      - name: Fail on a FAIL verdict
+        run: grep -qx PASS visual-qa-report/verdict.txt
