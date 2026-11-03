@@ -43,17 +43,17 @@ export function auditActor(principal: Principal) {
   return { actorUserId: principal.kind === 'shared-code' ? null : principal.userId, summary: { kind: principal.kind } }
 }
 
-export async function staffReport(db: AppDatabase, principal: Principal, galleryId: string) {
+export async function staffReport(db: AppDatabase, principal: Principal, galleryId: string, showId?: string | null) {
   if (!can(principal, 'view-report', galleryId)) throw new Response('Forbidden', { status: 403 })
-  const result = await readStaffReportForSession(db, galleryId)
+  const result = await readStaffReportForSession(db, galleryId, showId)
   if (result.status !== 200) throw new Response('Not found', { status: 404 })
   const access = leadPhoneAccess(principal, galleryId)
   return { ...result.body, leads: result.body.leads.map((lead) => ({ ...lead, phone: access === 'full' ? lead.phone : access === 'masked' ? `${lead.phone.slice(0, 4)}•••••${lead.phone.slice(-2)}` : '' })) }
 }
 
-export async function staffCsv(db: AppDatabase, principal: Principal, galleryId: string) {
+export async function staffCsv(db: AppDatabase, principal: Principal, galleryId: string, showId?: string | null) {
   if (!can(principal, 'export-leads', galleryId) || leadPhoneAccess(principal, galleryId) !== 'full') throw new Response('Forbidden', { status: 403 })
-  const result = await leadsCsvForSession(db, galleryId)
+  const result = await leadsCsvForSession(db, galleryId, showId)
   if (result.status === 200) await writeAudit(db, { ...auditActor(principal), galleryId, action: 'export-leads', targetType: 'gallery', targetId: galleryId })
   return result
 }

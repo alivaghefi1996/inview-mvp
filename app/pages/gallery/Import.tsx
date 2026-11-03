@@ -34,7 +34,7 @@ export default function Import() {
       <div className="row between wrap gap">
         <p className="muted small no-m">Your website and its content</p>
         <p className="pill warn" role="note">Demo: this import is a simulation. No file leaves your device.</p>
-        <Link to={siteUrl} className="pill good" target="_blank" rel="noreferrer">{gallery.subdomain}.inview.ir · Live</Link>
+        <Link to={siteUrl} className="pill good" target="_blank" rel="noreferrer">Website · Live</Link>
       </div>
 
       <div className="two">

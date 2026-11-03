@@ -36,7 +36,6 @@ export const gallery = {
   hoursFa: 'هر روز، ساعت ۱۶ تا ۲۰',
   instagram: 'roozgallery',
   phone: '+98 21 0000 0000',
-  subdomain: 'roozgallery',
 }
 
 export const show = {
@@ -167,11 +166,11 @@ export const importDemo = {
 
 // Plans in Toman, excluding VAT. Annual = 10 months.
 export const plans = [
-  { name: 'Show', tag: 'QR page only', monthly: 'Free', annual: 'Free', address: 'inview.ir/name',
+  { name: 'Show', tag: 'QR page only', monthly: 'Free', annual: 'Free', address: 'inview.moshes.io/g/name',
     features: ['A QR page for every show', 'Works and price list', 'Scan count'] },
-  { name: 'Website', tag: 'Gallery website', monthly: '2,500,000', annual: '25,000,000', address: 'name.inview.ir',
+  { name: 'Website', tag: 'Gallery website', monthly: '2,500,000', annual: '25,000,000', address: 'Gallery website',
     features: ['Website from editable templates', 'Import from your files, with cleanup', 'Inview archives each show when it closes', 'Visitor funnel per show', 'Hosting and support included'] },
-  { name: 'Growth', tag: 'Own domain and leads', monthly: '6,000,000', annual: '60,000,000', address: 'name.inview.ir + own domain',
+  { name: 'Growth', tag: 'Own domain and leads', monthly: '6,000,000', annual: '60,000,000', address: 'Gallery website + own domain',
     features: ['Everything in Website', 'Own domain', 'Ranked leads and audience', 'SMS and newsletters', 'We upload 2 shows a month'] },
   { name: 'Pro', tag: 'Several spaces', monthly: 'from 12,000,000', annual: 'from 120,000,000', address: 'Own domain',
     features: ['Custom design for several spaces', 'Collector management', 'Loyalty and sales tools', 'We upload every show', 'A named Inview contact'] },

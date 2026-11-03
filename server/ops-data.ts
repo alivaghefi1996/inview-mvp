@@ -63,7 +63,7 @@ export async function galleryQrCodes(db: AccountDb, principal: Principal | null,
   requireOperator(principal)
   return db.select({ id: qrCodes.id, code: qrCodes.code, label: qrCodes.label, scans: count(visits.id) })
     .from(qrCodes).innerJoin(shows, eq(shows.id, qrCodes.showId))
-    .leftJoin(visits, and(eq(visits.qrCodeId, qrCodes.id), eq(visits.showId, shows.id), eq(visits.kind, 'scan')))
+    .leftJoin(visits, and(eq(visits.qrCodeId, qrCodes.id), eq(visits.kind, 'scan')))
     .where(eq(shows.galleryId, galleryId)).groupBy(qrCodes.id).orderBy(desc(qrCodes.createdAt))
 }
 
