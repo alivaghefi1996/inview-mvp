@@ -1,7 +1,7 @@
 import express from 'express'
 import type { ErrorRequestHandler, Express, Request } from 'express'
 import { media } from '../database/schema'
-import { clearPublicRecordCache, loadStaffRecord, publishGalleryRecordForSession, tenantBySlug } from './gallery-record'
+import { clearPublicRecordCache, loadStaffRecord, publishGalleryRecordForSession, tenantBySlug, tenantWithShow } from './gallery-record'
 import { displayVariant, processAndStoreImage, UploadError } from './images'
 import { beginUpload, clientIpFrom, principalFromCode, runPilotRequest, writeApiResult, type ApiResult } from './rate-limit'
 import { requestIsSecure } from './staff-session'
@@ -53,6 +53,10 @@ async function apiTenant(db: Db, req: Request, slug: unknown, action: Action, co
   if (!can(principal, action, tenant.gallery.id)) throw new Response('Forbidden', { status: 403 })
   if (!['GET', 'HEAD'].includes(req.method) && !req.get('origin')) throw new Response('Forbidden', { status: 403 })
   return { tenant, principal }
+}
+
+function showQuery(req: Request): string | null {
+  return typeof req.query.show === 'string' ? req.query.show : null
 }
 
 function apiFailure(res: express.Response, error: unknown): boolean {
@@ -180,8 +184,8 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
       if (verb === 'PUT') {
         const { tenant, principal } = await apiTenant(db, req, body.gallery, 'edit-catalogue', body.accessCode || body.password)
         const result = await db.transaction(async (tx: Db) => {
-          const saved = await publishGalleryRecordForSession(tx, storage, tenant.gallery.id, body.record)
-          if (saved.status === 200) await writeAudit(tx, { ...auditActor(principal), galleryId: tenant.gallery.id, action: 'publish', targetType: 'show', targetId: tenant.show.id })
+          const saved = await publishGalleryRecordForSession(tx, storage, tenant.gallery.id, body.record, typeof body.show === 'string' ? body.show : null)
+          if (saved.status === 200) await writeAudit(tx, { ...auditActor(principal), galleryId: tenant.gallery.id, action: 'publish', targetType: 'show', targetId: typeof body.show === 'string' ? body.show : tenant.show.id })
           return saved
         })
         if (result.status === 200) clearPublicRecordCache(db)
@@ -216,7 +220,7 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
     }
     try {
       const { tenant, principal } = await apiTenant(db, req, req.query.gallery, 'view-report', req.get('x-access-code'))
-      sendJson(res, 200, await staffReport(db, principal, tenant.gallery.id))
+      sendJson(res, 200, await staffReport(db, principal, tenant.gallery.id, showQuery(req)))
     } catch (error) {
       if (apiFailure(res, error)) return
       console.error(error)
@@ -230,7 +234,9 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
   app.get('/api/v1/pilot/staff/record', async (req, res) => {
     try {
       const { tenant } = await apiTenant(db, req, req.query.gallery, 'view-report')
-      sendJson(res, 200, await loadStaffRecord(db, tenant))
+      const selected = await tenantWithShow(db, tenant, showQuery(req))
+      if (!selected) throw new Response('Not found', { status: 404 })
+      sendJson(res, 200, await loadStaffRecord(db, selected))
     } catch (error) {
       if (!apiFailure(res, error)) sendJson(res, 500, SERVER_ERROR)
     }
@@ -240,7 +246,7 @@ export function mountApi(app: Express, db: Db, storage: ObjectStorage) {
     res.setHeader('Cache-Control', 'no-store')
     try {
       const { tenant, principal } = await apiTenant(db, req, req.query.gallery, 'export-leads')
-      const result = await staffCsv(db, principal, tenant.gallery.id)
+      const result = await staffCsv(db, principal, tenant.gallery.id, showQuery(req))
       if (result.status !== 200) {
         sendJson(res, result.status, result.body)
         return

@@ -3,7 +3,7 @@ import { SkipLink } from '../../components/SkipLink'
 import { StaffLangSwitch } from '../../components/StaffLangSwitch'
 import { useStaffT } from '../../lib/i18n-staff'
 
-export function GalleryStaffLayout({ children, gallery, permissions = [], titleKey = 'pageTitle' }: { children: React.ReactNode; gallery: { slug: string; nameEn: string; nameFa: string }; permissions?: string[]; titleKey?: 'pageTitle' | 'team' | 'createQr' | null }) {
+export function GalleryStaffLayout({ children, gallery, permissions = [], titleKey = 'pageTitle' }: { children: React.ReactNode; gallery: { slug: string; nameEn: string; nameFa: string }; permissions?: string[]; titleKey?: 'pageTitle' | 'team' | 'createQr' | 'navShows' | null }) {
   const { t, lang, dir } = useStaffT()
   const busy = useNavigation().state !== 'idle'
   return (
@@ -19,6 +19,7 @@ export function GalleryStaffLayout({ children, gallery, permissions = [], titleK
         <nav className="staff-nav" aria-label={t.staffNav}>
           <Link to="/staff">{t.galleries}</Link>
           <Link to={`/staff/${gallery.slug}/report`}>{t.navReport}</Link>
+          <Link to={`/staff/${gallery.slug}/shows`}>{t.navShows}</Link>
           {permissions.includes('edit-catalogue') && <Link to={`/staff/${gallery.slug}`}>{t.navEditor}</Link>}
           {permissions.includes('manage-staff') && <Link to={`/staff/${gallery.slug}/team`}>{t.team}</Link>}
           {permissions.includes('create-qr') && <Link to={`/staff/${gallery.slug}/qr`}>{t.createQr}</Link>}
