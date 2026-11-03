@@ -4,13 +4,7 @@ import ts from 'typescript'
 
 const ROOTS = ['app/components', 'app/pages', 'app/routes', 'app/root.tsx']
 
-const ENGLISH_ONLY_DEMO = [
-  'app/pages/gallery/Dashboard.tsx',
-  'app/pages/gallery/GalleryLayout.tsx',
-  'app/pages/gallery/Import.tsx',
-  'app/pages/gallery/Plans.tsx',
-  'app/pages/site/Website.tsx',
-]
+const ENGLISH_ONLY_DEMO = ['app/pages/site/Website.tsx']
 
 const ALLOWED_WORDS = ['EN', 'English', 'Inview', 'https']
 
@@ -95,12 +89,12 @@ if (hits.length) {
   for (const hit of hits) console.error(`${hit.file}:${hit.line}: ${hit.kind}: ${JSON.stringify(hit.value)}`)
   console.error('')
   console.error(`${hits.length} hard-coded user-facing string(s).`)
-  console.error('Move the text into app/lib/i18n.ts (visitor and site) or app/lib/i18n-staff.ts (staff), then read it through useT() or useStaffT().')
+  console.error('Move the text into app/lib/i18n.ts (visitor and site), app/lib/i18n-staff.ts (staff) or app/lib/i18n-dashboard.ts (Rooz dashboard), then read it through useT(), useStaffT() or useDashboardT().')
 }
 
 if (hits.length || stale.length) {
   process.exitCode = 1
 } else {
   console.log(`UI string check passed on ${scanned.length - allowed.size} file(s).`)
-  console.log(`English-only Rooz demo pages skipped: ${ENGLISH_ONLY_DEMO.join(', ')}`)
+  console.log(`English-only Rooz demo page skipped: ${ENGLISH_ONLY_DEMO.join(', ')}`)
 }

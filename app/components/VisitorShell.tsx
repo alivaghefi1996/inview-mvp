@@ -45,7 +45,7 @@ export function VisitorShell() {
   const oName = pick(lang, record.name, record.nameFa)
   const base = isDb ? `/g/${slug}` : `/g/${gallery.slug}`
   const brand = isDb ? oName : galleryName
-  const demo = isDb && Boolean(layoutData?.pilot?.demo)
+  const demo = isDb ? Boolean(layoutData?.pilot?.demo) : true
   const demoCopy = oCopy(lang)
   const isPrices = pathname === `${base}/prices`
   const navItems = [
@@ -75,14 +75,14 @@ export function VisitorShell() {
                 <Link to={base} className="v-gallery" title={brand}>{brand}</Link>
               )}
               <span className="ink-rule" aria-hidden />
-              {demo && !isPrices && <span className="demo-badge" title={demoCopy.demoNote}>{demoCopy.demoLabel}</span>}
+              {demo && (!isDb || !isPrices) && <span className="demo-badge" title={demoCopy.demoNote}>{demoCopy.demoLabel}</span>}
             </div>
             <LangSwitch />
           </header>
           <nav className="v-desktop-nav" aria-label={t.visitorNav}>
             {navItems.map((item) => <NavLink key={item.to} to={item.to} end={item.end}>{item.label}</NavLink>)}
           </nav>
-          {demo && !isPrices && <p className="demo-banner" role="note">{demoCopy.demoNote}</p>}
+          {isDb && demo && !isPrices && <p className="demo-banner" role="note">{demoCopy.demoNote}</p>}
           <main id="main" tabIndex={-1} className="v-main" aria-busy={busy || undefined}><Outlet /></main>
           <nav className="v-tabs" aria-label={t.visitorNav}>
             {navItems.map((item) => <NavLink key={item.to} to={item.to} end={item.end}>{item.icon}<span>{item.label}</span></NavLink>)}
