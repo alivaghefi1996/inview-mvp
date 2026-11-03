@@ -67,9 +67,8 @@ async function signIn(page: Page, kind: 'save' | 'ask') {
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.getByRole('textbox', { name: 'شماره موبایل', exact: true }).fill('09123334444')
   await page.getByRole('checkbox', { name: /موافقم/ }).check()
-  await page.getByRole('button', { name: 'ارسال کد' }).click()
-  await page.getByLabel('کد ۴ رقمی را وارد کنید').fill('1234')
   await page.getByRole('button', { name: 'تأیید' }).click()
+  await expect(page.getByLabel('کد ۴ رقمی را وارد کنید')).toHaveCount(0)
   await expect(page.getByRole('dialog')).toBeHidden()
   if (kind === 'save') await expect(page.getByRole('button', { name: 'ذخیره شد' })).toBeVisible()
 }
