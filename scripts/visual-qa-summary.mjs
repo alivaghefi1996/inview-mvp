@@ -86,13 +86,14 @@ if (approved.length && missing) {
   }
 }
 const verdict = issues.length === 0 ? 'PASS' : 'FAIL'
+const countOf = (key) => new Set(pages.map((p) => p[key])).size
 const lines = [
   `## Visual QA: ${verdict}`,
   '',
   `Release commit: \`${commit}\``,
   `Site: ${baseUrl}`,
   artifactsUrl ? `Artifacts: ${artifactsUrl}` : '',
-  `Pages checked: ${pages.length} (7 routes, 2 viewports, 2 languages)`,
+  `Pages checked: ${pages.length} (${countOf('path')} routes, ${countOf('viewport')} viewports, ${countOf('lang')} languages)`,
   missing ? `Pages without an approved image: ${missing}` : '',
   '',
   '| Page | HTTP | Screenshot | axe serious/critical | impeccable |',
