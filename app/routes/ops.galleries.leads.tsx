@@ -1,7 +1,7 @@
 import { Form, useActionData, useLoaderData } from 'react-router'
 import { database } from '../../database/context'
 import { can } from '../../server/authz'
-import { galleryLeads, revealLeadPhone } from '../../server/ops-data'
+import { deleteLeadNumber, galleryLeads, revealLeadPhone } from '../../server/ops-data'
 import { GalleryLinks, OneTimeValue, OpsSubmit } from '../components/OpsUi'
 import { useOpsT } from '../lib/i18n-ops'
 import { actionFailure, field, operatorGallery, privateHeaders, requireOrigin } from './ops-session.server'
@@ -20,6 +20,9 @@ export async function action({ request, params }: { request: Request; params: { 
   requireOrigin(request)
   const form = await request.formData()
   try {
+    if (field(form, 'intent') === 'delete') {
+      return { error: false, ...await deleteLeadNumber(database(), principal, gallery.id, field(form, 'leadId'), field(form, 'deleteReason')) }
+    }
     return { error: false, ...await revealLeadPhone(database(), principal, gallery.id, field(form, 'leadId'), field(form, 'reason')) }
   } catch (error) { return actionFailure(error) }
 }
@@ -33,6 +36,7 @@ export default function GalleryLeads() {
     {exportAllowed && <a className="btn btn-outline" href={`/ops/galleries/${gallery.slug}/leads.csv`} download>{t.exportCsv}</a>}
     {result?.error && <p role="alert">{t.invalidFields}</p>}
     {result && 'phone' in result && <OneTimeValue key={result.leadId} value={result.phone} label={t.phone} />}
+    {result && 'deleted' in result && <p role="status">{t.leadDeleted}</p>}
     <div className="ops-team">{leads.map((lead) => <section key={lead.id} className="ops-member">
       <h2>{(lang === 'fa' ? lead.workTitleFa || lead.workTitle : lead.workTitle) || t.noWork}</h2>
       <p><bdi>{lead.phone}</bdi> · {t[lead.kind === 'ask' ? 'askKind' : 'saveKind']}</p>
@@ -41,6 +45,14 @@ export default function GalleryLeads() {
         <label>{t.reason}<input name="reason" required maxLength={500} autoComplete="off" /></label>
         <OpsSubmit>{t.reveal}</OpsSubmit>
       </Form>
+      <details className="ops-lead-delete">
+        <summary>{t.deleteLead}</summary>
+        <p>{t.deleteLeadHint}</p>
+        <Form method="post"><input type="hidden" name="leadId" value={lead.id} />
+          <label>{t.deleteReason}<input name="deleteReason" required maxLength={500} autoComplete="off" /></label>
+          <OpsSubmit name="intent" value="delete">{t.deleteLead}</OpsSubmit>
+        </Form>
+      </details>
     </section>)}</div>{!leads.length && <p>{t.noRows}</p>}
   </>
 }

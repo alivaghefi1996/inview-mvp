@@ -187,6 +187,15 @@
       "screenshot": true
     },
     {
+      "id": "privacy",
+      "group": "visitor-pilot",
+      "label": "Privacy",
+      "labelFa": "حریم خصوصی",
+      "path": "/privacy",
+      "access": "public",
+      "screenshot": true
+    },
+    {
       "id": "staff-forgot-password",
       "group": "staff",
       "label": "Password reset",

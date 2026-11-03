@@ -365,9 +365,10 @@ export function OWork({ work, record }: { work: PilotWork; record: PilotRecord }
   const { t, lang } = useT()
   const copy = oCopy(lang, pick(lang, record.name, record.nameFa))
   const slug = record.slug
-  const { saved, phone, consentVersion } = useVisitor()
+  const { saved, phone, consentVersion, leadRefused } = useVisitor()
   const { requireSignIn } = useSignIn()
-  const [asked, setAsked] = useState(false)
+  const [askPressed, setAsked] = useState(false)
+  const asked = askPressed && !leadRefused
   const workId = work.id
 
   useEffect(() => {

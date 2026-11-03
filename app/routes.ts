@@ -8,6 +8,7 @@ import {
 export default [
   index('routes/home.tsx'),
   route('site/:slug', 'routes/site.$slug.tsx'),
+  route('privacy', 'routes/privacy.tsx'),
   route('ops/sign-in', 'routes/ops.sign-in.tsx'),
   route('staff/invite/:token', 'routes/staff.invite.tsx'),
   route('staff/sign-in', 'routes/staff.sign-in.tsx'),

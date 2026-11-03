@@ -1,6 +1,7 @@
 import { ensureOGalleryTenant } from './gallery-bootstrap.ts'
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { CONSENT_TEXT_VERSION } from '../app/lib/consent.ts'
 
 process.env.NODE_ENV = 'test'
 delete process.env.O_GALLERY_ACCESS_CODE
@@ -242,7 +243,7 @@ test('leads stop at the limit and do not store the extra row', async () => {
       visitorId: VISITOR,
       workId: 'work0001',
       consent: true,
-      consentTextVersion: '2026-11-01',
+      consentTextVersion: CONSENT_TEXT_VERSION,
     }
     assert.equal((await runPilotRequest(db, storage, 'POST', body, IP, NOW, limits)).status, 200)
     assert.equal((await runPilotRequest(db, storage, 'POST', body, IP, NOW, limits)).status, 200)
