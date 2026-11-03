@@ -17,6 +17,7 @@ const emptyPages = [
   { path: '/g/o-gallery/works', name: 'works' },
   { path: '/g/o-gallery/prices', name: 'prices' },
   { path: '/g/o-gallery/about', name: 'about' },
+  { path: '/site/o-gallery', name: 'site' },
   { path: '/staff/o-gallery', name: 'dashboard-login' },
 ] as const
 
@@ -25,6 +26,7 @@ const filledPages = [
   { path: '/g/o-gallery/works', name: 'works-filled' },
   { path: '/g/o-gallery/prices', name: 'prices-filled' },
   { path: '/g/o-gallery/works/vis-work-01', name: 'work-detail' },
+  { path: '/site/o-gallery', name: 'site-filled' },
 ] as const
 
 const viewports = [
